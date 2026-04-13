@@ -1,0 +1,45 @@
+{
+  "name": "dredge",
+  "version": "0.1.0",
+  "description": "Magic: The Gathering card browser",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron .\"",
+    "electron:build": "vite build && electron-builder",
+    "electron:preview": "vite build && cross-env NODE_ENV=production electron ."
+  },
+  "build": {
+    "appId": "com.dgx.dredge",
+    "productName": "Dredge",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": null
+    }
+  },
+  "dependencies": {
+    "electron-store": "^8.2.0",
+    "fast-xml-parser": "^4.5.0",
+    "pinia": "^2.2.0",
+    "vue": "^3.5.0",
+    "vue-router": "^4.4.0",
+    "vue-virtual-scroller": "^2.0.0-beta.8"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.1.0",
+    "concurrently": "^9.0.0",
+    "cross-env": "^7.0.0",
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0",
+    "vite": "^6.0.0",
+    "wait-on": "^8.0.0"
+  }
+}
