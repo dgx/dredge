@@ -1,25 +1,21 @@
 <template>
-    <div class="app">
+    <v-app>
         <header class="app-titlebar">
             <span class="titlebar-text">Dredge</span>
 
             <template v-if="cards.loaded && !cards.showImport">
-                <div class="titlebar-toggle" v-if="cards.sealedPool.length > 0">
-                    <button
-                        class="toggle-btn"
-                        :class="{ active: cards.sealedMode }"
-                        @click="cards.setSealedMode(true)"
-                    >
-                        Sealed Pool
-                    </button>
-                    <button
-                        class="toggle-btn"
-                        :class="{ active: !cards.sealedMode }"
-                        @click="cards.setSealedMode(false)"
-                    >
-                        All Cards
-                    </button>
-                </div>
+                <v-btn-toggle
+                    v-if="cards.sealedPool.length > 0"
+                    :model-value="cards.sealedMode ? 'sealed' : 'all'"
+                    @update:model-value="(v) => cards.setSealedMode(v === 'sealed')"
+                    color="primary"
+                    density="compact"
+                    mandatory
+                    class="no-drag"
+                >
+                    <v-btn value="sealed" size="small">Sealed Pool</v-btn>
+                    <v-btn value="all" size="small">All Cards</v-btn>
+                </v-btn-toggle>
 
                 <span v-if="!cards.sealedMode" class="card-count">
                     {{ cards.filteredCards.length.toLocaleString() }} cards
@@ -29,33 +25,35 @@
                     · Pool {{ poolRemaining }}
                 </span>
 
-                <div class="titlebar-spacer" />
+                <v-spacer />
 
-                <button class="btn btn-small" @click="cards.openImport()">
+                <v-btn size="small" class="no-drag" @click="cards.openImport()">
                     {{ cards.sealedPool.length > 0 ? "Re-import" : "Import Pool" }}
-                </button>
+                </v-btn>
             </template>
         </header>
 
-        <div v-if="cards.loading" class="empty-state">
-            <p>Loading database...</p>
-        </div>
+        <v-main>
+            <div v-if="cards.loading" class="empty-state">
+                <p>Loading database...</p>
+            </div>
 
-        <div v-if="error" class="empty-state">
-            <p class="error-text">{{ error }}</p>
-        </div>
+            <div v-if="error" class="empty-state">
+                <p class="error-text">{{ error }}</p>
+            </div>
 
-        <template v-if="cards.loaded && !cards.loading">
-            <SealedImport v-if="cards.showImport" />
-            <template v-else>
-                <SearchBar />
-                <DeckBuilder v-if="cards.sealedMode" />
-                <CardGrid v-else />
+            <template v-if="cards.loaded && !cards.loading">
+                <SealedImport v-if="cards.showImport" />
+                <template v-else>
+                    <SearchBar />
+                    <DeckBuilder v-if="cards.sealedMode" />
+                    <CardGrid v-else />
+                </template>
             </template>
-        </template>
 
-        <CardDetail v-if="cards.selectedCard" />
-    </div>
+            <CardDetail v-if="cards.selectedCard" />
+        </v-main>
+    </v-app>
 </template>
 
 <script setup>

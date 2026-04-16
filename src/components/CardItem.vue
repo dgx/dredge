@@ -8,7 +8,13 @@
                     <span class="placeholder-cost">{{ card.manaCost }}</span>
                 </div>
                 <div class="placeholder-art">
-                    <div v-if="loading" class="spinner"></div>
+                    <v-progress-circular
+                        v-if="loading"
+                        indeterminate
+                        size="20"
+                        width="2"
+                        color="on-surface-variant"
+                    />
                 </div>
                 <div class="placeholder-typeline">{{ card.type }}</div>
                 <div class="placeholder-textbox">
@@ -30,7 +36,6 @@ const props = defineProps({
 
 defineEmits(["click"]);
 
-// Show immediately if already in memory cache
 const imageSrc = ref(getCachedSync(props.card));
 const loading = ref(!imageSrc.value);
 
@@ -38,7 +43,7 @@ let abortController = null;
 let debounceTimer = null;
 
 onMounted(() => {
-    if (imageSrc.value) return; // Already have it
+    if (imageSrc.value) return;
 
     debounceTimer = setTimeout(async () => {
         abortController = new AbortController();

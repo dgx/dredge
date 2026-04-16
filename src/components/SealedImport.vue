@@ -1,61 +1,79 @@
 <template>
     <div class="sealed-import">
-        <div class="sealed-import-box">
+        <v-card class="sealed-import-box" variant="flat" color="transparent">
             <h2>Import Sealed Pool</h2>
             <p class="sealed-import-hint">
                 Paste a Cockatrice-format card list below. Each line:
                 <code>count Card Name [SET:number]</code>
             </p>
 
-            <textarea
-                class="sealed-import-textarea"
+            <v-textarea
                 v-model="importText"
                 rows="14"
                 placeholder="1 Ninja's Blades [FIN:108]&#10;2 Fate of the Sun-Cryst [FIN:19]"
                 spellcheck="false"
+                variant="outlined"
+                class="import-textarea"
+                no-resize
             />
 
             <div class="sealed-import-actions">
-                <button class="btn" @click="pasteFromClipboard">Paste from Clipboard</button>
-                <button class="btn" @click="importText = ''" :disabled="!importText">Clear</button>
-                <button
-                    class="btn btn-primary"
+                <v-btn @click="pasteFromClipboard" prepend-icon="mdi-content-paste">
+                    Paste from Clipboard
+                </v-btn>
+                <v-btn @click="importText = ''" :disabled="!importText">Clear</v-btn>
+                <v-btn
+                    color="primary"
+                    variant="flat"
                     @click="doImport"
                     :disabled="!importText.trim()"
                 >
                     Import Pool
-                </button>
+                </v-btn>
             </div>
 
-            <div v-if="clipboardError" class="sealed-import-notice error-text">
+            <v-alert
+                v-if="clipboardError"
+                type="error"
+                variant="tonal"
+                density="compact"
+                class="mt-3"
+            >
                 {{ clipboardError }}
-            </div>
+            </v-alert>
 
-            <div v-if="cards.importErrors.length > 0" class="sealed-import-errors">
+            <v-alert
+                v-if="cards.importErrors.length > 0"
+                type="warning"
+                variant="tonal"
+                class="mt-3"
+            >
                 <p>
                     <strong>{{ cards.importErrors.length }}</strong> line(s) could not be matched:
                 </p>
-                <ul>
+                <ul class="import-error-list">
                     <li v-for="(err, i) in cards.importErrors" :key="i">
                         <span class="err-reason">[{{ err.reason }}]</span>
                         {{ err.line }}
                     </li>
                 </ul>
-            </div>
+            </v-alert>
+
+            <v-divider class="my-4" />
 
             <div class="sealed-import-secondary">
-                <button
+                <v-btn
                     v-if="cards.sealedPool.length > 0"
-                    class="btn btn-small"
+                    size="small"
                     @click="backToPool"
                 >
                     Back to current pool ({{ cards.sealedPool.length }})
-                </button>
-                <button class="btn btn-small" @click="browseAll">
+                </v-btn>
+                <v-btn size="small" @click="browseAll">
                     Browse all cards instead
-                </button>
+                </v-btn>
             </div>
-        </div>
+        </v-card>
     </div>
 </template>
 

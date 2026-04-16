@@ -1,12 +1,13 @@
 <template>
     <aside class="deck-summary" :class="{ collapsed: !cards.showSidebar }">
-        <button
+        <v-btn
             class="deck-summary-toggle"
-            @click="cards.showSidebar = !cards.showSidebar"
+            variant="tonal"
+            size="x-small"
+            :icon="cards.showSidebar ? 'mdi-chevron-right' : 'mdi-chevron-left'"
             :title="cards.showSidebar ? 'Hide summary' : 'Show summary'"
-        >
-            {{ cards.showSidebar ? "▶" : "◀" }}
-        </button>
+            @click="cards.showSidebar = !cards.showSidebar"
+        />
 
         <div v-if="cards.showSidebar" class="deck-summary-body">
             <div class="deck-count-block">
@@ -31,12 +32,13 @@
                         class="curve-row"
                     >
                         <span class="curve-label">{{ key }}</span>
-                        <div class="curve-bar-track">
-                            <div
-                                class="curve-bar"
-                                :style="{ width: barWidth(count) + '%' }"
-                            ></div>
-                        </div>
+                        <v-progress-linear
+                            :model-value="barValue(count)"
+                            color="primary"
+                            bg-color="surface-variant"
+                            height="14"
+                            rounded
+                        />
                         <span class="curve-value">{{ count }}</span>
                     </div>
                 </div>
@@ -55,16 +57,20 @@
                             :class="`color-${code.toLowerCase()}`"
                         >{{ code }}</span>
                         <span class="land-name">{{ cards.BASIC_LAND_NAMES[code] }}</span>
-                        <button
-                            class="land-btn"
+                        <v-btn
+                            icon="mdi-minus"
+                            size="x-small"
+                            variant="tonal"
                             :disabled="!cards.basicLands[code]"
                             @click="cards.adjustBasicLand(code, -1)"
-                        >−</button>
+                        />
                         <span class="land-count">{{ cards.basicLands[code] }}</span>
-                        <button
-                            class="land-btn"
+                        <v-btn
+                            icon="mdi-plus"
+                            size="x-small"
+                            variant="tonal"
                             @click="cards.adjustBasicLand(code, 1)"
-                        >+</button>
+                        />
                     </div>
                 </div>
                 <div class="land-total">
@@ -73,9 +79,14 @@
             </div>
 
             <div class="summary-section">
-                <button class="btn btn-small btn-danger" @click="confirmClear">
+                <v-btn
+                    color="error"
+                    variant="outlined"
+                    block
+                    @click="confirmClear"
+                >
                     Clear Deck
-                </button>
+                </v-btn>
             </div>
         </div>
     </aside>
@@ -101,7 +112,7 @@ const curveMax = computed(() => {
     return max;
 });
 
-function barWidth(count) {
+function barValue(count) {
     if (curveMax.value === 0) return 0;
     return (count / curveMax.value) * 100;
 }

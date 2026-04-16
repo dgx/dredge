@@ -20,13 +20,14 @@
         >
             <CardItem :card="stack.card" />
             <span v-if="count > 1" class="stack-count-badge">×{{ count }}</span>
-            <button
+            <v-btn
                 class="stack-info-btn"
+                icon="mdi-information-outline"
+                size="x-small"
+                variant="tonal"
                 :title="'View details for ' + stack.card.name"
                 @click.stop="openDetail"
-            >
-                ⓘ
-            </button>
+            />
             <div class="stack-action-hint">{{ actionIcon }}</div>
         </div>
     </div>

@@ -1,11 +1,16 @@
 <template>
     <div class="grouped-grid">
-        <div v-if="cards.groupedStacks.length === 0" class="grouped-empty">
-            <p v-if="cards.deckView === 'deck'">
+        <v-alert
+            v-if="cards.groupedStacks.length === 0"
+            type="info"
+            variant="tonal"
+            class="grouped-empty"
+        >
+            <template v-if="cards.deckView === 'deck'">
                 No cards in deck yet. Switch to Pool view and click cards to add them.
-            </p>
-            <p v-else>No cards match your current filters.</p>
-        </div>
+            </template>
+            <template v-else>No cards match your current filters.</template>
+        </v-alert>
 
         <section
             v-for="group in cards.groupedStacks"
@@ -14,9 +19,9 @@
         >
             <header class="grouped-header">
                 <span class="grouped-label">{{ group.label }}</span>
-                <span class="grouped-count">
+                <v-chip size="x-small" variant="tonal">
                     {{ totalInGroup(group) }} card{{ totalInGroup(group) === 1 ? "" : "s" }}
-                </span>
+                </v-chip>
             </header>
             <div class="grouped-row">
                 <CardStack
