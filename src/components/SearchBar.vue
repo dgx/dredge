@@ -34,7 +34,33 @@
                 <option value="Mythic">Mythic</option>
             </select>
 
-            <select v-model="cards.sortBy" class="filter-select">
+            <template v-if="cards.sealedMode">
+                <select v-model="cards.groupBy" class="filter-select">
+                    <option value="cmc">Group: CMC</option>
+                    <option value="color">Group: Color</option>
+                    <option value="type">Group: Type</option>
+                    <option value="none">Group: None</option>
+                </select>
+
+                <div class="view-toggle">
+                    <button
+                        class="toggle-btn"
+                        :class="{ active: cards.deckView === 'pool' }"
+                        @click="cards.deckView = 'pool'"
+                    >
+                        Pool
+                    </button>
+                    <button
+                        class="toggle-btn"
+                        :class="{ active: cards.deckView === 'deck' }"
+                        @click="cards.deckView = 'deck'"
+                    >
+                        Deck
+                    </button>
+                </div>
+            </template>
+
+            <select v-else v-model="cards.sortBy" class="filter-select">
                 <option value="name">Sort: Name</option>
                 <option value="cmc">Sort: Mana Cost</option>
                 <option value="color">Sort: Color</option>

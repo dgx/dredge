@@ -9,7 +9,7 @@
             >
                 <CardItem
                     v-for="card in row.cards"
-                    :key="card.name"
+                    :key="card.poolId || card.name"
                     :card="card"
                     @click="cards.selectCard(card)"
                 />
