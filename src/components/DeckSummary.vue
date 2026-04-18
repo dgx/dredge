@@ -31,7 +31,14 @@
                         :key="key"
                         class="curve-row"
                     >
-                        <span class="curve-label">{{ key }}</span>
+                        <span class="curve-label">
+                            <i
+                                v-if="key !== '7+'"
+                                class="ms ms-cost"
+                                :class="`ms-${key}`"
+                            />
+                            <span v-else class="curve-label-text">7+</span>
+                        </span>
                         <v-progress-linear
                             :model-value="barValue(count)"
                             color="primary"
@@ -52,10 +59,10 @@
                         :key="code"
                         class="land-row"
                     >
-                        <span
-                            class="land-pip"
-                            :class="`color-${code.toLowerCase()}`"
-                        >{{ code }}</span>
+                        <i
+                            class="ms ms-cost land-pip"
+                            :class="`ms-${code.toLowerCase()}`"
+                        />
                         <span class="land-name">{{ cards.BASIC_LAND_NAMES[code] }}</span>
                         <v-btn
                             icon="mdi-minus"

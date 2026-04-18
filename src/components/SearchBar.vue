@@ -21,11 +21,11 @@
                     :key="color.code"
                     :value="color.code"
                     :title="color.label"
-                    :class="`color-btn color-${color.code.toLowerCase()}`"
+                    class="color-btn"
                     icon
                     size="small"
                 >
-                    {{ color.symbol }}
+                    <i class="ms ms-cost" :class="`ms-${color.code.toLowerCase()}`" />
                 </v-btn>
             </v-btn-toggle>
 

@@ -111,19 +111,45 @@ body {
 }
 
 .color-filters .color-btn {
-    width: 32px !important;
-    height: 32px !important;
-    min-width: 32px !important;
-    font-weight: 700;
-    font-size: 12px;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    font-size: 20px;
 }
 
-.color-w { background: #f9faf4 !important; color: #333 !important; }
-.color-u { background: #0e68ab !important; color: #fff !important; }
-.color-b { background: #2b2b2b !important; color: #ccc !important; }
-.color-r { background: #d32029 !important; color: #fff !important; }
-.color-g { background: #00733e !important; color: #fff !important; }
-.color-c { background: #8888a0 !important; color: #fff !important; }
+.color-filters .color-btn .ms.ms-cost {
+    font-size: 20px;
+    line-height: 1;
+}
+
+/* Mana cost layout */
+.mana-cost {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    line-height: 1;
+}
+
+.mana-cost .ms.ms-cost {
+    font-size: 16px;
+}
+
+.mana-cost--inline .ms {
+    font-size: 14px;
+}
+
+.mana-cost-slash {
+    opacity: 0.6;
+    font-size: 14px;
+    margin: 0 2px;
+}
+
+/* Oracle text inline mana symbols */
+.detail-text p .ms {
+    font-size: 13px;
+    vertical-align: -1px;
+    margin: 0 1px;
+}
 
 /* Card Grid - virtualized */
 .card-grid-container {
@@ -195,10 +221,13 @@ body {
 }
 
 .placeholder-cost {
-    font-size: 9px;
-    opacity: 0.72;
     flex-shrink: 0;
     margin-left: 4px;
+    gap: 2px;
+}
+
+.placeholder-cost .ms.ms-cost {
+    font-size: 10px;
 }
 
 .placeholder-art {
@@ -462,6 +491,11 @@ body {
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.grouped-icon.ms.ms-cost {
+    font-size: 18px;
+    color: #e8c668;
+}
+
 .grouped-label {
     font-family: var(--font-display);
     font-size: 14px;
@@ -669,8 +703,21 @@ body {
 
 .curve-label {
     font-size: 12px;
-    opacity: 0.72;
+    opacity: 0.9;
     text-align: right;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.curve-label .ms.ms-cost {
+    font-size: 16px;
+}
+
+.curve-label-text {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: 0.04em;
 }
 
 .curve-value {
@@ -691,15 +738,9 @@ body {
     align-items: center;
 }
 
-.land-pip {
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    font-size: 11px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.land-pip.ms.ms-cost {
+    font-size: 22px;
+    justify-self: center;
 }
 
 .land-name {

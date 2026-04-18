@@ -29,6 +29,7 @@
     "@mdi/font": "^7.4.47",
     "electron-store": "^8.2.0",
     "fast-xml-parser": "^4.5.0",
+    "mana-font": "^1.18.0",
     "pinia": "^2.2.0",
     "vue": "^3.5.0",
     "vue-router": "^4.4.0",

@@ -5,7 +5,7 @@
             <div v-else class="card-placeholder">
                 <div class="placeholder-header">
                     <span class="placeholder-name">{{ card.name }}</span>
-                    <span class="placeholder-cost">{{ card.manaCost }}</span>
+                    <ManaCost :cost="card.manaCost" class="placeholder-cost" />
                 </div>
                 <div class="placeholder-art">
                     <v-progress-circular
@@ -29,6 +29,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue";
 import { loadCardImage, getCachedSync } from "../services/imageLoader";
+import ManaCost from "./ManaCost.vue";
 
 const props = defineProps({
     card: { type: Object, required: true },

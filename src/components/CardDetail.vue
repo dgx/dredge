@@ -31,7 +31,7 @@
                         <v-list density="compact" bg-color="transparent" class="detail-list">
                             <v-list-item v-if="card.manaCost">
                                 <template #title><span class="detail-label">Mana Cost</span></template>
-                                <template #subtitle>{{ card.manaCost }}</template>
+                                <template #subtitle><ManaCost :cost="card.manaCost" /></template>
                             </v-list-item>
                             <v-list-item v-if="card.cmc">
                                 <template #title><span class="detail-label">Mana Value</span></template>
@@ -64,7 +64,7 @@
                         </v-list>
                         <div v-if="card.text" class="detail-text">
                             <span class="detail-label">Text</span>
-                            <p>{{ card.text }}</p>
+                            <p v-html="oracleHtml" />
                         </div>
                     </div>
                 </div>
@@ -77,10 +77,13 @@
 import { ref, onMounted, computed } from "vue";
 import { useCardStore } from "../stores/cards";
 import { loadCardImage } from "../services/imageLoader";
+import { renderOracleHtml } from "../services/manaSymbols";
+import ManaCost from "./ManaCost.vue";
 
 const cards = useCardStore();
 const card = computed(() => cards.selectedCard);
 const imageSrc = ref(null);
+const oracleHtml = computed(() => renderOracleHtml(card.value?.text || ""));
 
 const colorNames = { W: "White", U: "Blue", B: "Black", R: "Red", G: "Green" };
 
