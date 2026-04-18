@@ -33,26 +33,24 @@
             </template>
         </header>
 
-        <v-main>
-            <div v-if="cards.loading" class="empty-state">
-                <p>Loading database...</p>
-            </div>
+        <div v-if="cards.loading" class="empty-state">
+            <p>Loading database...</p>
+        </div>
 
-            <div v-if="error" class="empty-state">
-                <p class="error-text">{{ error }}</p>
-            </div>
+        <div v-if="error" class="empty-state">
+            <p class="error-text">{{ error }}</p>
+        </div>
 
-            <template v-if="cards.loaded && !cards.loading">
-                <SealedImport v-if="cards.showImport" />
-                <template v-else>
-                    <SearchBar />
-                    <DeckBuilder v-if="cards.sealedMode" />
-                    <CardGrid v-else />
-                </template>
+        <template v-if="cards.loaded && !cards.loading">
+            <SealedImport v-if="cards.showImport" />
+            <template v-else>
+                <SearchBar />
+                <DeckBuilder v-if="cards.sealedMode" />
+                <CardGrid v-else />
             </template>
+        </template>
 
-            <CardDetail v-if="cards.selectedCard" />
-        </v-main>
+        <CardDetail v-if="cards.selectedCard" />
     </v-app>
 </template>
 

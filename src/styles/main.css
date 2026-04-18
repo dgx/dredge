@@ -11,18 +11,13 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-/* Vuetify's v-main adds default padding — collapse it so our layout controls spacing */
-.v-main {
+/* Vuetify's v-application forces min-height: 100vh on its wrap — override so our flex chain can constrain children */
+.v-application,
+.v-application__wrap {
+    min-height: 0 !important;
+    height: 100%;
     display: flex;
     flex-direction: column;
-    min-height: 0;
-    --v-layout-top: 0;
-}
-.v-main__wrap {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    flex: 1;
 }
 
 /* Frameless Electron titlebar */
