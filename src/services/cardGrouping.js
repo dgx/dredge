@@ -1,13 +1,13 @@
 const CMC_ORDER = ["0", "1", "2", "3", "4", "5", "6", "7+", "land"];
 const CMC_LABELS = {
-    0: "CMC 0",
-    1: "CMC 1",
-    2: "CMC 2",
-    3: "CMC 3",
-    4: "CMC 4",
-    5: "CMC 5",
-    6: "CMC 6",
-    "7+": "CMC 7+",
+    0: "Mana",
+    1: "Mana",
+    2: "Mana",
+    3: "Mana",
+    4: "Mana",
+    5: "Mana",
+    6: "Mana",
+    "7+": "Mana",
     land: "Land",
 };
 

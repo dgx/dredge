@@ -5,6 +5,8 @@
             count >= 2 && 'has-stack-1',
             count >= 3 && 'has-stack-2',
             count >= 4 && 'has-stack-3',
+            fullyInDeck && 'stack-fully-in-deck',
+            partiallyInDeck && 'stack-partially-in-deck',
         ]"
     >
         <div class="card-stack-shadows" aria-hidden="true">
@@ -19,16 +21,31 @@
             @contextmenu.prevent="onRightClick"
         >
             <CardItem :card="stack.card" />
-            <span v-if="count > 1" class="stack-count-badge">×{{ count }}</span>
+            <v-avatar
+                v-if="badgeText"
+                class="stack-count-badge"
+                :color="showDeckBadge ? 'success' : 'surface'"
+                size="32"
+                rounded="0"
+            >
+                <span class="stack-count-badge-text">{{ badgeText }}</span>
+            </v-avatar>
             <v-btn
                 class="stack-info-btn"
                 icon="mdi-information-outline"
-                size="x-small"
-                variant="tonal"
+                size="small"
+                color="surface-variant"
+                variant="elevated"
                 :title="'View details for ' + stack.card.name"
                 @click.stop="openDetail"
             />
-            <div class="stack-action-hint">{{ actionIcon }}</div>
+            <v-avatar
+                class="stack-action-hint"
+                color="primary"
+                size="72"
+            >
+                <v-icon :icon="actionIconName" size="56" color="on-primary" />
+            </v-avatar>
         </div>
     </div>
 </template>
@@ -46,15 +63,25 @@ const props = defineProps({
 const cards = useCardStore();
 
 const count = computed(() => props.stack.count);
-const actionIcon = computed(() => (props.clickAction === "add" ? "+" : "−"));
+const isAllView = computed(() => props.clickAction === "add");
+const fullyInDeck = computed(() => isAllView.value && props.stack.inDeck === props.stack.total);
+const partiallyInDeck = computed(
+    () => isAllView.value && props.stack.inDeck > 0 && props.stack.inDeck < props.stack.total
+);
+const showDeckBadge = computed(() => isAllView.value && props.stack.inDeck > 0);
+const badgeText = computed(() => {
+    if (showDeckBadge.value) return `${props.stack.inDeck}/${props.stack.total}`;
+    return count.value > 1 ? `×${count.value}` : null;
+});
+const actionIconName = computed(() => (isAllView.value ? "mdi-plus" : "mdi-minus"));
 const actionHint = computed(() =>
-    props.clickAction === "add"
+    isAllView.value
         ? `Click to add to deck (${props.stack.inDeck}/${props.stack.total} in deck) — right-click to remove`
         : `Click to remove from deck (${props.stack.inDeck}/${props.stack.total} in deck) — right-click to add back`
 );
 
 function onClick() {
-    if (props.clickAction === "add") {
+    if (isAllView.value) {
         cards.addCardToDeck(props.stack.poolIds);
     } else {
         cards.removeCardFromDeck(props.stack.poolIds);
@@ -62,7 +89,7 @@ function onClick() {
 }
 
 function onRightClick() {
-    if (props.clickAction === "add") {
+    if (isAllView.value) {
         cards.removeCardFromDeck(props.stack.poolIds);
     } else {
         cards.addCardToDeck(props.stack.poolIds);

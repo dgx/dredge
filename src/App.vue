@@ -28,7 +28,7 @@
                 <v-spacer />
 
                 <v-btn size="small" class="no-drag" @click="cards.openImport()">
-                    {{ cards.sealedPool.length > 0 ? "Re-import" : "Import Pool" }}
+                    {{ cards.sealedPool.length > 0 ? "Re-import" : "Build Sealed Deck" }}
                 </v-btn>
             </template>
         </header>

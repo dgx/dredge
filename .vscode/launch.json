@@ -1,0 +1,39 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Electron: Main",
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron",
+            "runtimeArgs": ["--remote-debugging-port=9223", "."],
+            "env": { "NODE_ENV": "development" },
+            "preLaunchTask": "dev (browser)",
+            "sourceMaps": true,
+            "resolveSourceMapLocations": ["${workspaceFolder}/**", "!**/node_modules/**"]
+        },
+        {
+            "name": "Electron: Renderer",
+            "type": "chrome",
+            "request": "attach",
+            "port": 9223,
+            "webRoot": "${workspaceFolder}/src",
+            "timeout": 30000
+        },
+        {
+            "name": "Browser: Dev",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost:5173",
+            "webRoot": "${workspaceFolder}/src",
+            "preLaunchTask": "dev (browser)"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Electron: Dev (Main + Renderer)",
+            "configurations": ["Electron: Main", "Electron: Renderer"],
+            "stopAll": true
+        }
+    ]
+}

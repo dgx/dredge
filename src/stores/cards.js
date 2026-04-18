@@ -35,7 +35,7 @@ export const useCardStore = defineStore("cards", () => {
     const deckIds = ref(new Set());
     const basicLands = ref(emptyBasicLands());
     const groupBy = ref("cmc");
-    const deckView = ref("pool");
+    const deckView = ref("all");
     const showSidebar = ref(true);
 
     // Filters
@@ -128,11 +128,13 @@ export const useCardStore = defineStore("cards", () => {
     });
 
     // Stacks to render based on current deckView. Each has a `count` for the visual stack.
+    // "all" view shows every pool stack at full pool count (with in-deck count still exposed
+    // on the stack so the UI can badge/dim). "deck" view shows only cards currently in the deck.
     const visibleStacks = computed(() => {
-        const showing = deckView.value === "deck" ? "inDeck" : "available";
+        const isDeckView = deckView.value === "deck";
         const filtered = [];
         for (const s of poolStacks.value) {
-            const count = s[showing];
+            const count = isDeckView ? s.inDeck : s.total;
             if (count <= 0) continue;
             if (!passesFilters(s.card)) continue;
             filtered.push({ ...s, count });
@@ -281,7 +283,7 @@ export const useCardStore = defineStore("cards", () => {
         resetFilters();
         clearDeck();
         groupBy.value = "cmc";
-        deckView.value = "pool";
+        deckView.value = "all";
     }
 
     function clearSealedPool() {

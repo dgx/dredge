@@ -7,7 +7,7 @@
             class="grouped-empty"
         >
             <template v-if="cards.deckView === 'deck'">
-                No cards in deck yet. Switch to Pool view and click cards to add them.
+                No cards in deck yet. Switch to All Cards and click to add — right-click removes.
             </template>
             <template v-else>No cards match your current filters.</template>
         </v-alert>
@@ -18,8 +18,16 @@
             class="grouped-section"
         >
             <header class="grouped-header">
+                <v-avatar
+                    v-if="isCmcPipKey(group.key)"
+                    class="grouped-pip"
+                    size="30"
+                    color="#beb9b2"
+                >
+                    <span>{{ group.key }}</span>
+                </v-avatar>
                 <i
-                    v-if="groupIconClass(group.key)"
+                    v-else-if="groupIconClass(group.key)"
                     class="ms ms-cost grouped-icon"
                     :class="groupIconClass(group.key)"
                 />
@@ -62,8 +70,11 @@ const TYPE_ICON = {
     Land: "ms-land",
 };
 
+function isCmcPipKey(key) {
+    return /^[0-6]$/.test(key) || key === "7+";
+}
+
 function groupIconClass(key) {
-    if (/^[0-6]$/.test(key)) return `ms-${key}`;
     if (COLOR_ICON[key]) return COLOR_ICON[key];
     if (TYPE_ICON[key]) return TYPE_ICON[key];
     if (key === "land") return "ms-land";

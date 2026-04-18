@@ -1,7 +1,6 @@
 const { app, BrowserWindow, ipcMain, Menu } = require("electron");
 const path = require("path");
 const fs = require("fs");
-const os = require("os");
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -19,9 +18,9 @@ function createWindow() {
         frame: false,
         titleBarStyle: "hidden",
         titleBarOverlay: {
-            color: "#16213e",
-            symbolColor: "#e0e0e0",
-            height: 40,
+            color: "#221a15",
+            symbolColor: "#c9a14a",
+            height: 39,
         },
         webPreferences: {
             preload: path.join(__dirname, "preload.js"),
@@ -50,21 +49,10 @@ app.on("activate", () => {
     }
 });
 
-// --- Card Database Path ---
-
-function getCardDatabasePath() {
-    const platform = os.platform();
-    if (platform === "win32") {
-        return path.join(app.getPath("appData"), "..", "Local", "Cockatrice", "Cockatrice", "cards.xml");
-    }
-    // Linux / WSL - use symlinked location
-    return path.join(os.homedir(), ".local", "share", "Cockatrice", "cards.xml");
-}
-
 // --- IPC Handlers ---
 
 ipcMain.handle("db:readCardDatabase", async () => {
-    const dbPath = getCardDatabasePath();
+    const dbPath = path.join(process.env.LOCALAPPDATA, "Cockatrice", "Cockatrice", "cards.xml");
     if (!fs.existsSync(dbPath)) {
         throw new Error(`Card database not found at ${dbPath}`);
     }

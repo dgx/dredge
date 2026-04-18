@@ -3,9 +3,7 @@ import vue from "@vitejs/plugin-vue";
 import vuetify from "vite-plugin-vuetify";
 import fs from "fs";
 import path from "path";
-import os from "os";
-
-const cardDbPath = path.join(os.homedir(), ".local", "share", "Cockatrice", "cards.xml");
+const cardDbPath = path.join(process.env.LOCALAPPDATA, "Cockatrice", "Cockatrice", "cards.xml");
 
 export default defineConfig({
     plugins: [

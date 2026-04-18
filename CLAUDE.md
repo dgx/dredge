@@ -40,7 +40,6 @@ src/
 
 Reads Cockatrice's `cards.xml` (v4 format). The app finds it automatically:
 - **Windows**: `%LOCALAPPDATA%/Cockatrice/Cockatrice/cards.xml`
-- **Linux/WSL**: `~/.local/share/Cockatrice/cards.xml` (symlinked from Windows path)
 
 The XML root tag `cockatrice_carddatabase` is part of the file format, not a project dependency.
 
@@ -70,15 +69,7 @@ npm run electron:dev
 
 ## Building for Windows
 
-Development happens in WSL, Windows build is a separate copy:
-
 ```bash
-# Sync source to Windows (from WSL)
-./sync-to-windows.sh
-
-# Then on Windows PowerShell:
-cd C:\Users\<username>\dredge
-npm install        # first time only
 npm run electron:dev    # dev mode
 npm run electron:build  # produces installer in dist-electron/
 ```

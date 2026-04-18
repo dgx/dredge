@@ -11,6 +11,17 @@
 
         <div v-if="cards.showSidebar" class="deck-summary-body">
             <div class="deck-count-block">
+                <v-btn
+                    class="deck-clear-btn"
+                    prepend-icon="mdi-trash-can-outline"
+                    size="small"
+                    variant="text"
+                    color="error"
+                    :disabled="cards.deckTotal === 0"
+                    @click="confirmClear"
+                >
+                    Clear
+                </v-btn>
                 <div class="deck-count-value" :class="countClass">
                     {{ cards.deckTotal }} <span class="deck-count-target">/ 40</span>
                 </div>
@@ -31,14 +42,13 @@
                         :key="key"
                         class="curve-row"
                     >
-                        <span class="curve-label">
-                            <i
-                                v-if="key !== '7+'"
-                                class="ms ms-cost"
-                                :class="`ms-${key}`"
-                            />
-                            <span v-else class="curve-label-text">7+</span>
-                        </span>
+                        <v-avatar
+                            class="curve-pip"
+                            size="22"
+                            color="#beb9b2"
+                        >
+                            <span>{{ key }}</span>
+                        </v-avatar>
                         <v-progress-linear
                             :model-value="barValue(count)"
                             color="primary"
@@ -59,10 +69,13 @@
                         :key="code"
                         class="land-row"
                     >
-                        <i
-                            class="ms ms-cost land-pip"
-                            :class="`ms-${code.toLowerCase()}`"
-                        />
+                        <v-avatar
+                            class="mana-pip"
+                            size="24"
+                            :color="MANA_BG[code]"
+                        >
+                            <i class="ms" :class="`ms-${code.toLowerCase()}`" />
+                        </v-avatar>
                         <span class="land-name">{{ cards.BASIC_LAND_NAMES[code] }}</span>
                         <v-btn
                             icon="mdi-minus"
@@ -80,19 +93,20 @@
                         />
                     </div>
                 </div>
-                <div class="land-total">
-                    Basics: <strong>{{ cards.basicLandTotal }}</strong>
-                </div>
             </div>
 
-            <div class="summary-section">
+            <div class="summary-actions">
                 <v-btn
-                    color="error"
-                    variant="outlined"
+                    class="copy-deck-btn"
+                    color="primary"
+                    variant="flat"
+                    size="large"
                     block
-                    @click="confirmClear"
+                    :prepend-icon="copied ? 'mdi-check' : 'mdi-content-copy'"
+                    :disabled="cards.deckTotal === 0"
+                    @click="copyDeck"
                 >
-                    Clear Deck
+                    {{ copied ? "Copied!" : "Copy Deck" }}
                 </v-btn>
             </div>
         </div>
@@ -100,8 +114,18 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useCardStore } from "../stores/cards";
+import { exportDeck } from "../services/deckExporter";
+
+const MANA_BG = {
+    W: "#f0f2c0",
+    U: "#b5cde3",
+    B: "#aca29a",
+    R: "#db8664",
+    G: "#93b483",
+    C: "#beb9b2",
+};
 
 const cards = useCardStore();
 
@@ -128,6 +152,28 @@ function confirmClear() {
     if (cards.deckTotal === 0) return;
     if (confirm("Clear the current deck and reset basic lands?")) {
         cards.clearDeck();
+    }
+}
+
+const copied = ref(false);
+let copyResetTimer = null;
+
+async function copyDeck() {
+    const text = exportDeck({
+        poolStacks: cards.poolStacks,
+        basicLands: cards.basicLands,
+        basicLandNames: cards.BASIC_LAND_NAMES,
+    });
+    try {
+        await navigator.clipboard.writeText(text);
+        copied.value = true;
+        clearTimeout(copyResetTimer);
+        copyResetTimer = setTimeout(() => {
+            copied.value = false;
+        }, 1500);
+    } catch (err) {
+        console.error("Clipboard write failed:", err);
+        alert("Could not copy to clipboard.");
     }
 }
 </script>

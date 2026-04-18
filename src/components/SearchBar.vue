@@ -25,7 +25,13 @@
                     icon
                     size="small"
                 >
-                    <i class="ms ms-cost" :class="`ms-${color.code.toLowerCase()}`" />
+                    <v-avatar
+                        class="mana-pip"
+                        size="26"
+                        :color="MANA_BG[color.code]"
+                    >
+                        <i class="ms" :class="`ms-${color.code.toLowerCase()}`" />
+                    </v-avatar>
                 </v-btn>
             </v-btn-toggle>
 
@@ -57,8 +63,8 @@
                     density="compact"
                     mandatory
                 >
-                    <v-btn value="pool" size="small">Pool</v-btn>
-                    <v-btn value="deck" size="small">Deck</v-btn>
+                    <v-btn value="all" size="small">All Cards</v-btn>
+                    <v-btn value="deck" size="small">In Deck</v-btn>
                 </v-btn-toggle>
             </template>
 
@@ -80,6 +86,15 @@ import { computed } from "vue";
 import { useCardStore } from "../stores/cards";
 
 const cards = useCardStore();
+
+const MANA_BG = {
+    W: "#f0f2c0",
+    U: "#b5cde3",
+    B: "#aca29a",
+    R: "#db8664",
+    G: "#93b483",
+    C: "#beb9b2",
+};
 
 const colors = [
     { code: "W", symbol: "W", label: "White" },
@@ -109,7 +124,7 @@ const rarityItems = [
 ];
 
 const groupItems = [
-    { title: "CMC", value: "cmc" },
+    { title: "Mana", value: "cmc" },
     { title: "Color", value: "color" },
     { title: "Type", value: "type" },
     { title: "None", value: "none" },

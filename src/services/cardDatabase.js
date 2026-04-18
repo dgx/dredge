@@ -69,7 +69,7 @@ function parseCards(cardsNode, sets) {
         cards.push({
             name,
             text: c.text || "",
-            manaCost: props.manacost || "",
+            manaCost: props.manacost != null ? String(props.manacost) : "",
             cmc: parseFloat(props.cmc) || 0,
             type: props.type || "",
             mainType: props.maintype || "",

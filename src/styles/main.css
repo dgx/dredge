@@ -27,6 +27,7 @@ body {
 
 /* Frameless Electron titlebar */
 .app-titlebar {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 14px;
@@ -39,6 +40,21 @@ body {
     flex-shrink: 0;
     -webkit-app-region: drag;
     user-select: none;
+}
+
+/* Vertical divider at the left edge of the Windows caption-control overlay,
+   mirroring the separator after the "Dredge" wordmark. Uses the Window
+   Controls Overlay env vars when available, otherwise falls back to the
+   typical Win11 caption-button strip width. */
+.app-titlebar::after {
+    content: "";
+    position: absolute;
+    top: 8px;
+    bottom: 8px;
+    right: 152px;
+    width: 1px;
+    background: rgba(197, 157, 74, 0.28);
+    pointer-events: none;
 }
 
 .app-titlebar .no-drag,
@@ -114,12 +130,12 @@ body {
     width: 36px !important;
     height: 36px !important;
     min-width: 36px !important;
-    font-size: 20px;
 }
 
-.color-filters .color-btn .ms.ms-cost {
-    font-size: 20px;
-    line-height: 1;
+.mana-pip .ms {
+    font-size: 18px;
+    color: #111;
+    transform: translateY(-2px);
 }
 
 /* Mana cost layout */
@@ -196,9 +212,9 @@ body {
     height: 100%;
     display: flex;
     flex-direction: column;
-    border: 1px solid #3a3a5a;
+    border: 1px solid #3a2d1f;
     border-radius: 8px;
-    background: #1a1a2e;
+    background: #15110d;
 }
 
 .placeholder-header {
@@ -206,7 +222,7 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 5px 8px;
-    background: #2a2a4a;
+    background: #2c2218;
     border-radius: 7px 7px 0 0;
     min-height: 24px;
 }
@@ -232,9 +248,9 @@ body {
 
 .placeholder-art {
     flex: 0 0 90px;
-    background: #12122a;
+    background: #100c08;
     margin: 4px 6px;
-    border: 1px solid #2a2a4a;
+    border: 1px solid #2c2218;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -244,8 +260,8 @@ body {
     font-size: 9px;
     opacity: 0.72;
     padding: 3px 8px;
-    border-top: 1px solid #2a2a4a;
-    border-bottom: 1px solid #2a2a4a;
+    border-top: 1px solid #2c2218;
+    border-bottom: 1px solid #2c2218;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -366,12 +382,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #2a2a4a;
+    background: #3a2d1f;
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #3a3a5a;
+    background: #5a4530;
 }
 
 /* Sealed Import */
@@ -496,6 +512,13 @@ body {
     color: #e8c668;
 }
 
+.grouped-pip {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 700;
+    color: #111;
+}
+
 .grouped-label {
     font-family: var(--font-display);
     font-size: 14px;
@@ -519,11 +542,15 @@ body {
     height: 272px;
     flex-shrink: 0;
     cursor: pointer;
-    transition: transform 0.1s;
+    transform-style: preserve-3d;
+    transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.3, 1),
+        filter 0.22s ease;
 }
 
 .card-stack:hover {
-    transform: translate(-1px, -1px);
+    transform: perspective(900px) translateZ(45px);
+    filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.6));
+    z-index: 5;
 }
 
 .card-stack.has-stack-1 { margin-right: 6px; margin-bottom: 6px; }
@@ -565,24 +592,49 @@ body {
 }
 
 .stack-count-badge {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    background: rgba(0, 0, 0, 0.82);
-    color: #fff;
-    font-size: 12px;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 10px;
+    position: absolute !important;
+    bottom: 8px;
+    left: 8px;
     pointer-events: none;
     z-index: 3;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    min-width: 32px !important;
+    width: auto !important;
+    padding: 0 8px;
+    opacity: 0.92;
+    box-shadow: none !important;
+    border: 1px solid rgba(var(--v-theme-on-surface), 0.18);
+}
+
+.stack-count-badge-text {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.02em;
+}
+
+.card-stack.stack-fully-in-deck .card-stack-main,
+.card-stack.stack-partially-in-deck .card-stack-main {
+    position: relative;
+}
+
+.card-stack.stack-fully-in-deck .card-image-wrapper,
+.card-stack.stack-partially-in-deck .card-image-wrapper {
+    box-shadow:
+        0 0 0 3px rgb(var(--v-theme-success)),
+        0 0 14px rgba(var(--v-theme-success), 0.5);
+}
+
+.card-stack.stack-fully-in-deck .card-stack-main {
+    opacity: 0.55;
+}
+.card-stack.stack-fully-in-deck:hover .card-stack-main {
+    opacity: 0.85;
 }
 
 .stack-info-btn {
     position: absolute !important;
-    bottom: 6px;
-    right: 6px;
+    bottom: 8px;
+    right: 8px;
     opacity: 0;
     transition: opacity 0.15s;
     z-index: 3;
@@ -593,38 +645,33 @@ body {
 }
 
 .stack-action-hint {
-    position: absolute;
-    top: 6px;
-    left: 6px;
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.78);
-    color: #fff;
-    font-size: 18px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    position: absolute !important;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.85);
     opacity: 0;
-    transition: opacity 0.15s;
+    transition: opacity 0.15s, transform 0.15s;
     pointer-events: none;
     z-index: 3;
-    line-height: 1;
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.55),
+        0 0 0 4px rgba(var(--v-theme-primary), 0.28);
 }
 
 .card-stack:hover .stack-action-hint {
     opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
 }
 
 /* Deck Summary Sidebar */
 .deck-summary {
     position: relative;
-    width: 300px;
+    width: 320px;
     flex-shrink: 0;
     background: rgb(var(--v-theme-surface));
     border-left: 1px solid rgba(255, 255, 255, 0.08);
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     transition: width 0.2s;
 }
 
@@ -641,24 +688,45 @@ body {
 }
 
 .deck-summary-body {
-    padding: 20px 16px 16px 32px;
+    flex: 1;
+    min-height: 0;
+    padding: 14px 14px 14px 28px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
+    overflow-y: auto;
 }
 
 .deck-count-block {
+    position: relative;
     text-align: center;
 }
 
+.deck-clear-btn {
+    position: absolute !important;
+    top: -2px;
+    right: -4px;
+    opacity: 0.85;
+    letter-spacing: 0.03em;
+    font-weight: 600;
+}
+
+.deck-clear-btn:hover {
+    opacity: 1;
+}
+
+.deck-clear-btn .v-btn__prepend {
+    margin-inline-end: 4px;
+}
+
 .deck-count-value {
-    font-size: 32px;
+    font-size: 26px;
     font-weight: 700;
     line-height: 1;
 }
 
 .deck-count-target {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 400;
     opacity: 0.72;
 }
@@ -668,22 +736,37 @@ body {
 .count-over { color: rgb(var(--v-theme-warning)); }
 
 .deck-count-breakdown {
-    margin-top: 8px;
-    font-size: 12px;
+    margin-top: 4px;
+    font-size: 11px;
     opacity: 0.72;
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 5px;
     justify-content: center;
+}
+
+.summary-actions {
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+}
+
+.summary-actions .copy-deck-btn {
+    font-weight: 700;
+    letter-spacing: 0.04em;
 }
 
 .summary-section h3 {
     font-family: var(--font-display);
-    font-size: 13px;
-    letter-spacing: 0.18em;
+    font-size: 12px;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
     opacity: 0.82;
-    margin-bottom: 10px;
+    margin-bottom: 6px;
     font-weight: 700;
     color: #e8c668;
 }
@@ -691,33 +774,21 @@ body {
 .curve-bars {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 3px;
 }
 
 .curve-row {
     display: grid;
-    grid-template-columns: 28px 1fr 22px;
+    grid-template-columns: 22px 1fr 20px;
     gap: 8px;
     align-items: center;
 }
 
-.curve-label {
-    font-size: 12px;
-    opacity: 0.9;
-    text-align: right;
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-}
-
-.curve-label .ms.ms-cost {
-    font-size: 16px;
-}
-
-.curve-label-text {
+.curve-pip {
     font-family: var(--font-display);
+    font-size: 13px;
     font-weight: 700;
-    letter-spacing: 0.04em;
+    color: #111;
 }
 
 .curve-value {
@@ -728,19 +799,14 @@ body {
 .land-counters {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 3px;
 }
 
 .land-row {
     display: grid;
-    grid-template-columns: 24px 1fr 30px 28px 30px;
+    grid-template-columns: 24px 1fr 26px 22px 26px;
     gap: 6px;
     align-items: center;
-}
-
-.land-pip.ms.ms-cost {
-    font-size: 22px;
-    justify-self: center;
 }
 
 .land-name {
@@ -752,11 +818,4 @@ body {
     font-weight: 600;
     text-align: center;
     font-variant-numeric: tabular-nums;
-}
-
-.land-total {
-    margin-top: 10px;
-    font-size: 12px;
-    opacity: 0.72;
-    text-align: right;
 }

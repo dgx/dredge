@@ -27,8 +27,8 @@ export function parseCost(str) {
 }
 
 export function splitSides(cost) {
-    if (!cost) return [];
-    return cost.split(" // ").map(parseCost);
+    if (cost === null || cost === undefined || cost === "") return [];
+    return String(cost).split(" // ").map(parseCost);
 }
 
 // Map a mana token (e.g. "W", "2", "U/B", "G/W/P", "T") to mana-font classes.
