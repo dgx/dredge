@@ -8,6 +8,9 @@
     "build": "vite build",
     "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron .\"",
     "electron:build": "vite build && electron-builder",
+    "electron:build:win": "vite build && electron-builder --win --x64",
+    "electron:build:mac": "vite build && electron-builder --mac --arm64",
+    "electron:build:all": "vite build && electron-builder --win --x64 --mac --arm64",
     "electron:preview": "vite build && cross-env NODE_ENV=production electron ."
   },
   "build": {
@@ -23,6 +26,15 @@
     "win": {
       "target": "nsis",
       "icon": null
+    },
+    "mac": {
+      "target": {
+        "target": "dmg",
+        "arch": "arm64"
+      },
+      "category": "public.app-category.utilities",
+      "icon": null,
+      "identity": null
     }
   },
   "dependencies": {
