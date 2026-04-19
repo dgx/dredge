@@ -119,11 +119,51 @@ body {
     flex-shrink: 0;
 }
 
-.filter-group {
+.bar-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.bar-row--top .search-input {
+    flex: 1 1 320px;
+    min-width: 240px;
+}
+
+.bar-row--controls {
+    gap: 16px;
+}
+
+.cluster-divider {
+    align-self: stretch;
+    margin: 4px 0;
+    opacity: 0.4;
+}
+
+.control-cluster {
     display: flex;
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
+}
+
+.control-label {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgb(var(--v-theme-on-surface-variant));
+}
+
+.control-select {
+    min-width: 130px;
+    max-width: 160px;
+}
+
+.color-filters {
+    border-radius: 8px;
 }
 
 .color-filters .color-btn {
@@ -132,10 +172,67 @@ body {
     min-width: 36px !important;
 }
 
-.mana-pip .ms {
-    font-size: 18px;
+.group-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.group-chip {
+    padding-inline: 12px !important;
+    text-transform: none !important;
+    letter-spacing: 0;
+    font-weight: 600;
+}
+
+.group-order-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    margin-right: 8px;
+    border-radius: 9px;
+    background: rgba(0, 0, 0, 0.28);
+    color: rgb(var(--v-theme-on-primary));
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.mana-pip {
+    font-family: var(--font-display);
+    font-weight: 700;
     color: #111;
-    transform: translateY(-2px);
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.mana-pip > * {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    width: 1em;
+    height: 1em;
+}
+
+.mana-pip > span {
+    font-size: var(--pip-text-size, 0.62em);
+}
+
+.mana-pip .ms {
+    font-size: var(--pip-icon-size, 0.72em);
+    color: #111;
+}
+
+.mana-pip--type {
+    background: transparent !important;
+}
+
+.mana-pip--type .ms {
+    color: #e8c668;
 }
 
 /* Mana cost layout */
@@ -499,6 +596,19 @@ body {
     gap: 10px;
 }
 
+.grouped-children {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-left: 12px;
+    border-left: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.grouped-depth-1 > .grouped-children {
+    padding-left: 10px;
+    gap: 8px;
+}
+
 .grouped-header {
     display: flex;
     align-items: center;
@@ -507,16 +617,14 @@ body {
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.grouped-icon.ms.ms-cost {
-    font-size: 18px;
-    color: #e8c668;
+.grouped-header-1 {
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+    padding: 2px 0;
 }
 
-.grouped-pip {
-    font-family: var(--font-display);
-    font-size: 20px;
-    font-weight: 700;
-    color: #111;
+.grouped-header-2 {
+    border-bottom: none;
+    padding: 0;
 }
 
 .grouped-label {
@@ -526,6 +634,18 @@ body {
     letter-spacing: 0.18em;
     text-transform: uppercase;
     color: #e8c668;
+}
+
+.grouped-header-1 .grouped-label {
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    color: #d4b35a;
+}
+
+.grouped-header-2 .grouped-label {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: #b89a4d;
 }
 
 .grouped-row {

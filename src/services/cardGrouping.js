@@ -70,43 +70,71 @@ function typeKey(card) {
     return "Other";
 }
 
-export function groupCards(stacks, groupBy) {
-    if (groupBy === "none") {
-        return stacks.length ? [{ key: "all", label: "All", stacks: [...stacks] }] : [];
+const GROUP_DEFS = {
+    cmc: { keyFn: cmcKey, order: CMC_ORDER, labels: CMC_LABELS },
+    color: { keyFn: colorKey, order: COLOR_ORDER, labels: COLOR_LABELS },
+    type: {
+        keyFn: typeKey,
+        order: TYPE_ORDER,
+        labels: Object.fromEntries(TYPE_ORDER.map((t) => [t, t])),
+    },
+};
+
+function normalizeLevels(groupBy) {
+    const raw = Array.isArray(groupBy) ? groupBy : [groupBy];
+    const seen = new Set();
+    const levels = [];
+    for (const g of raw) {
+        if (!g || g === "none" || !GROUP_DEFS[g] || seen.has(g)) continue;
+        seen.add(g);
+        levels.push(g);
     }
+    return levels;
+}
+
+function groupRecursive(stacks, levels, depth) {
+    const level = levels[depth];
+    const { keyFn, order, labels } = GROUP_DEFS[level];
+    const isLeaf = depth === levels.length - 1;
 
     const buckets = new Map();
-    const keyFn =
-        groupBy === "cmc" ? cmcKey : groupBy === "color" ? colorKey : typeKey;
-
     for (const stack of stacks) {
         const key = keyFn(stack.card);
         if (!buckets.has(key)) buckets.set(key, []);
         buckets.get(key).push(stack);
     }
 
-    let order, labels;
-    if (groupBy === "cmc") {
-        order = CMC_ORDER;
-        labels = CMC_LABELS;
-    } else if (groupBy === "color") {
-        order = COLOR_ORDER;
-        labels = COLOR_LABELS;
-    } else {
-        order = TYPE_ORDER;
-        labels = Object.fromEntries(TYPE_ORDER.map((t) => [t, t]));
-    }
-
     const result = [];
     for (const key of order) {
         if (!buckets.has(key)) continue;
         const groupStacks = buckets.get(key);
-        groupStacks.sort((a, b) => {
-            const cmcDiff = (a.card.cmc || 0) - (b.card.cmc || 0);
-            if (cmcDiff !== 0) return cmcDiff;
-            return a.card.name.localeCompare(b.card.name);
-        });
-        result.push({ key, label: labels[key] || key, stacks: groupStacks });
+        const entry = {
+            key,
+            label: labels[key] || key,
+            groupBy: level,
+            depth,
+        };
+        if (isLeaf) {
+            groupStacks.sort((a, b) => {
+                const cmcDiff = (a.card.cmc || 0) - (b.card.cmc || 0);
+                if (cmcDiff !== 0) return cmcDiff;
+                return a.card.name.localeCompare(b.card.name);
+            });
+            entry.stacks = groupStacks;
+        } else {
+            entry.children = groupRecursive(groupStacks, levels, depth + 1);
+        }
+        result.push(entry);
     }
     return result;
+}
+
+export function groupCards(stacks, groupBy) {
+    const levels = normalizeLevels(groupBy);
+    if (levels.length === 0) {
+        return stacks.length
+            ? [{ key: "all", label: "All", groupBy: null, depth: 0, stacks: [...stacks] }]
+            : [];
+    }
+    return groupRecursive(stacks, levels, 0);
 }

@@ -1,82 +1,103 @@
 <template>
     <div class="search-bar">
-        <v-text-field
-            v-model="cards.searchQuery"
-            placeholder="Search cards by name or text..."
-            prepend-inner-icon="mdi-magnify"
-            clearable
-        />
-
-        <div class="filter-group">
+        <!-- Row 1: search + view + reset -->
+        <div class="bar-row bar-row--top">
+            <v-text-field
+                v-model="cards.searchQuery"
+                placeholder="Search cards by name or text…"
+                prepend-inner-icon="mdi-magnify"
+                clearable
+                class="search-input"
+            />
             <v-btn-toggle
-                v-model="selectedColors"
+                v-if="cards.sealedMode"
+                v-model="cards.deckView"
                 color="primary"
-                density="compact"
-                multiple
+                density="comfortable"
                 variant="outlined"
-                class="color-filters"
+                divided
+                mandatory
             >
-                <v-btn
-                    v-for="color in colors"
-                    :key="color.code"
-                    :value="color.code"
-                    :title="color.label"
-                    class="color-btn"
-                    icon
-                    size="small"
-                >
-                    <v-avatar
-                        class="mana-pip"
-                        size="26"
-                        :color="MANA_BG[color.code]"
-                    >
-                        <i class="ms" :class="`ms-${color.code.toLowerCase()}`" />
-                    </v-avatar>
-                </v-btn>
+                <v-btn value="all">All Cards</v-btn>
+                <v-btn value="deck">In Deck</v-btn>
             </v-btn-toggle>
+            <v-btn
+                variant="text"
+                density="comfortable"
+                prepend-icon="mdi-filter-remove-outline"
+                @click="cards.resetFilters()"
+            >
+                Reset
+            </v-btn>
+        </div>
 
-            <v-select
-                v-model="cards.typeFilter"
-                :items="typeItems"
-                label="Type"
-                style="max-width: 170px"
-            />
-
-            <v-select
-                v-model="cards.rarityFilter"
-                :items="rarityItems"
-                label="Rarity"
-                style="max-width: 170px"
-            />
-
-            <template v-if="cards.sealedMode">
-                <v-select
-                    v-model="cards.groupBy"
-                    :items="groupItems"
-                    label="Group by"
-                    style="max-width: 170px"
-                />
-
+        <!-- Row 2: filter cluster | group/sort cluster -->
+        <div class="bar-row bar-row--controls">
+            <section class="control-cluster">
+                <span class="control-label">Filter</span>
                 <v-btn-toggle
-                    v-model="cards.deckView"
-                    color="primary"
-                    density="compact"
-                    mandatory
+                    v-model="selectedColors"
+                    density="comfortable"
+                    multiple
+                    variant="outlined"
+                    class="color-filters"
                 >
-                    <v-btn value="all" size="small">All Cards</v-btn>
-                    <v-btn value="deck" size="small">In Deck</v-btn>
+                    <v-btn
+                        v-for="color in colors"
+                        :key="color.code"
+                        :value="color.code"
+                        :title="color.label"
+                        class="color-btn"
+                        icon
+                    >
+                        <ManaPip kind="color" :value="color.code" :size="26" />
+                    </v-btn>
                 </v-btn-toggle>
-            </template>
+                <v-select
+                    v-model="cards.typeFilter"
+                    :items="typeItems"
+                    label="Type"
+                    class="control-select"
+                />
+                <v-select
+                    v-model="cards.rarityFilter"
+                    :items="rarityItems"
+                    label="Rarity"
+                    class="control-select"
+                />
+            </section>
 
-            <v-select
-                v-else
-                v-model="cards.sortBy"
-                :items="sortItems"
-                label="Sort by"
-                style="max-width: 180px"
-            />
+            <v-divider vertical class="cluster-divider" />
 
-            <v-btn size="small" @click="cards.resetFilters()">Clear</v-btn>
+            <section v-if="cards.sealedMode" class="control-cluster">
+                <span class="control-label">Group</span>
+                <div class="group-chips">
+                    <v-btn
+                        v-for="g in GROUP_TYPES"
+                        :key="g.value"
+                        :variant="isGrouped(g.value) ? 'flat' : 'outlined'"
+                        :color="isGrouped(g.value) ? 'primary' : undefined"
+                        density="comfortable"
+                        class="group-chip"
+                        @click="toggleGroup(g.value)"
+                    >
+                        <span
+                            v-if="isGrouped(g.value)"
+                            class="group-order-badge"
+                        >{{ orderOf(g.value) }}</span>
+                        <span>{{ g.label }}</span>
+                    </v-btn>
+                </div>
+            </section>
+
+            <section v-else class="control-cluster">
+                <span class="control-label">Sort</span>
+                <v-select
+                    v-model="cards.sortBy"
+                    :items="sortItems"
+                    class="control-select"
+                />
+            </section>
         </div>
     </div>
 </template>
@@ -84,25 +105,17 @@
 <script setup>
 import { computed } from "vue";
 import { useCardStore } from "../stores/cards";
+import ManaPip from "./ManaPip.vue";
 
 const cards = useCardStore();
 
-const MANA_BG = {
-    W: "#f0f2c0",
-    U: "#b5cde3",
-    B: "#aca29a",
-    R: "#db8664",
-    G: "#93b483",
-    C: "#beb9b2",
-};
-
 const colors = [
-    { code: "W", symbol: "W", label: "White" },
-    { code: "U", symbol: "U", label: "Blue" },
-    { code: "B", symbol: "B", label: "Black" },
-    { code: "R", symbol: "R", label: "Red" },
-    { code: "G", symbol: "G", label: "Green" },
-    { code: "C", symbol: "C", label: "Colorless" },
+    { code: "W", label: "White" },
+    { code: "U", label: "Blue" },
+    { code: "B", label: "Black" },
+    { code: "R", label: "Red" },
+    { code: "G", label: "Green" },
+    { code: "C", label: "Colorless" },
 ];
 
 const selectedColors = computed({
@@ -123,17 +136,35 @@ const rarityItems = [
     { title: "Mythic", value: "Mythic" },
 ];
 
-const groupItems = [
-    { title: "Mana", value: "cmc" },
-    { title: "Color", value: "color" },
-    { title: "Type", value: "type" },
-    { title: "None", value: "none" },
-];
-
 const sortItems = [
     { title: "Name", value: "name" },
     { title: "Mana Cost", value: "cmc" },
     { title: "Color", value: "color" },
     { title: "Type", value: "type" },
 ];
+
+const GROUP_TYPES = [
+    { value: "type", label: "Type" },
+    { value: "color", label: "Color" },
+    { value: "cmc", label: "Mana Cost" },
+];
+
+function isGrouped(g) {
+    return cards.groupBy.includes(g);
+}
+
+function orderOf(g) {
+    const idx = cards.groupBy.indexOf(g);
+    return idx >= 0 ? idx + 1 : null;
+}
+
+function toggleGroup(g) {
+    const existing = cards.groupBy.indexOf(g);
+    if (existing >= 0) {
+        cards.setGroupLevel(existing, null);
+        return;
+    }
+    const slot = cards.groupBy.findIndex((v) => !v);
+    if (slot >= 0) cards.setGroupLevel(slot, g);
+}
 </script>

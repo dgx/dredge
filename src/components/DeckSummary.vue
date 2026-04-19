@@ -69,13 +69,7 @@
                         :key="code"
                         class="land-row"
                     >
-                        <v-avatar
-                            class="mana-pip"
-                            size="24"
-                            :color="MANA_BG[code]"
-                        >
-                            <i class="ms" :class="`ms-${code.toLowerCase()}`" />
-                        </v-avatar>
+                        <ManaPip kind="color" :value="code" :size="24" />
                         <span class="land-name">{{ cards.BASIC_LAND_NAMES[code] }}</span>
                         <v-btn
                             icon="mdi-minus"
@@ -117,15 +111,7 @@
 import { computed, ref } from "vue";
 import { useCardStore } from "../stores/cards";
 import { exportDeck } from "../services/deckExporter";
-
-const MANA_BG = {
-    W: "#f0f2c0",
-    U: "#b5cde3",
-    B: "#aca29a",
-    R: "#db8664",
-    G: "#93b483",
-    C: "#beb9b2",
-};
+import ManaPip from "./ManaPip.vue";
 
 const cards = useCardStore();
 

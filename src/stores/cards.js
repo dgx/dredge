@@ -34,7 +34,25 @@ export const useCardStore = defineStore("cards", () => {
     // Deck-building state
     const deckIds = ref(new Set());
     const basicLands = ref(emptyBasicLands());
-    const groupBy = ref("cmc");
+    const GROUP_SLOTS = 3;
+    const DEFAULT_GROUP_BY = ["color", "cmc", null];
+    const VALID_GROUP_TYPES = ["type", "color", "cmc"];
+    const groupBy = ref([...DEFAULT_GROUP_BY]);
+
+    function setGroupLevel(index, value) {
+        if (index < 0 || index >= GROUP_SLOTS) return;
+        const next = Array.from({ length: GROUP_SLOTS }, (_, i) => groupBy.value[i] ?? null);
+        const normalized = !value || value === "none" ? null : value;
+        if (normalized && !VALID_GROUP_TYPES.includes(normalized)) return;
+        // Remove the value from any other slot to enforce uniqueness across slots
+        if (normalized) {
+            for (let i = 0; i < GROUP_SLOTS; i++) {
+                if (i !== index && next[i] === normalized) next[i] = null;
+            }
+        }
+        next[index] = normalized;
+        groupBy.value = next;
+    }
     const deckView = ref("all");
     const showSidebar = ref(true);
 
@@ -282,7 +300,7 @@ export const useCardStore = defineStore("cards", () => {
         showImport.value = false;
         resetFilters();
         clearDeck();
-        groupBy.value = "cmc";
+        groupBy.value = [...DEFAULT_GROUP_BY];
         deckView.value = "all";
     }
 
@@ -393,5 +411,8 @@ export const useCardStore = defineStore("cards", () => {
         adjustBasicLand,
         setBasicLand,
         clearDeck,
+        setGroupLevel,
+        GROUP_SLOTS,
+        VALID_GROUP_TYPES,
     };
 });
