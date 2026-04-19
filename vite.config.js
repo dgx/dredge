@@ -2,8 +2,12 @@ import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import vuetify from "vite-plugin-vuetify";
 import fs from "fs";
+import os from "os";
 import path from "path";
-const cardDbPath = path.join(process.env.LOCALAPPDATA, "Cockatrice", "Cockatrice", "cards.xml");
+
+const cardDbPath = process.platform === "darwin"
+    ? path.join(os.homedir(), "Library", "Application Support", "Cockatrice", "Cockatrice", "cards.xml")
+    : path.join(process.env.LOCALAPPDATA || "", "Cockatrice", "Cockatrice", "cards.xml");
 
 export default defineConfig({
     plugins: [

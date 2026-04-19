@@ -14,19 +14,12 @@ Electron · Vue 3 (Composition API) · Pinia · Vuetify · Vite · fast-xml-pars
 
 ## Card Database
 
-Dredge reads Cockatrice's `cards.xml` (v4 format) from its standard location:
+Dredge reads Cockatrice's `cards.xml` (v4) from its standard location:
 
-- **Windows**: `%LOCALAPPDATA%/Cockatrice/Cockatrice/cards.xml`
+- **Windows**: `%LOCALAPPDATA%\Cockatrice\Cockatrice\cards.xml`
+- **macOS**: `~/Library/Application Support/Cockatrice/Cockatrice/cards.xml`
 
-Access is read-only. Tokens are filtered out on parse.
-
-## Images
-
-Three-tier cache: memory → disk → Scryfall.
-
-- Source: `https://api.scryfall.com/cards/{uuid}?format=image`
-- Disk cache: `{userData}/imageCache/{setCode}/{fileName}`
-- Rate limited (6 concurrent, 120ms spacing), queued newest-first, aborts on scroll-away
+Card images are fetched from Scryfall and cached locally.
 
 ## Development
 

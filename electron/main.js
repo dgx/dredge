@@ -1,8 +1,16 @@
 const { app, BrowserWindow, ipcMain, Menu } = require("electron");
+const os = require("os");
 const path = require("path");
 const fs = require("fs");
 
 const isDev = process.env.NODE_ENV === "development";
+
+function getCardDbPath() {
+    if (process.platform === "darwin") {
+        return path.join(os.homedir(), "Library", "Application Support", "Cockatrice", "Cockatrice", "cards.xml");
+    }
+    return path.join(process.env.LOCALAPPDATA || "", "Cockatrice", "Cockatrice", "cards.xml");
+}
 
 // Remove default menu
 Menu.setApplicationMenu(null);
@@ -52,7 +60,7 @@ app.on("activate", () => {
 // --- IPC Handlers ---
 
 ipcMain.handle("db:readCardDatabase", async () => {
-    const dbPath = path.join(process.env.LOCALAPPDATA, "Cockatrice", "Cockatrice", "cards.xml");
+    const dbPath = getCardDbPath();
     if (!fs.existsSync(dbPath)) {
         throw new Error(`Card database not found at ${dbPath}`);
     }

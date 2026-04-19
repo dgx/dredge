@@ -40,6 +40,7 @@ src/
 
 Reads Cockatrice's `cards.xml` (v4 format). The app finds it automatically:
 - **Windows**: `%LOCALAPPDATA%/Cockatrice/Cockatrice/cards.xml`
+- **macOS**: `~/Library/Application Support/Cockatrice/Cockatrice/cards.xml`
 
 The XML root tag `cockatrice_carddatabase` is part of the file format, not a project dependency.
 
