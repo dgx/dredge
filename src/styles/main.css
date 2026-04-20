@@ -496,6 +496,16 @@ body {
     background: #5a4530;
 }
 
+.card-grid-container::-webkit-scrollbar,
+.deck-builder-main::-webkit-scrollbar {
+    width: 14px;
+}
+
+.card-grid-container::-webkit-scrollbar-thumb,
+.deck-builder-main::-webkit-scrollbar-thumb {
+    border-radius: 7px;
+}
+
 /* Sealed Import */
 .sealed-import {
     flex: 1;

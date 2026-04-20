@@ -6,8 +6,8 @@
             variant="tonal"
             class="grouped-empty"
         >
-            <template v-if="cards.deckView === 'deck'">
-                No cards in deck yet. Switch to All Cards and click to add — right-click removes.
+            <template v-if="cards.deckView === 'deck' && cards.deckTotal === 0">
+                Your deck is empty. Switch to All Cards to start adding cards.
             </template>
             <template v-else>No cards match your current filters.</template>
         </v-alert>
