@@ -292,6 +292,14 @@ body {
     cursor: pointer;
     transition: transform 0.15s;
     flex-shrink: 0;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+.card-item img {
+    -webkit-user-drag: none;
+    user-select: none;
+    pointer-events: none;
 }
 
 .card-item:hover {
