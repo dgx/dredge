@@ -27,7 +27,7 @@
                 </div>
             </div>
 
-            <div class="summary-section">
+            <div v-if="typeKeys.length" class="summary-section">
                 <h3>Card Types</h3>
                 <div class="curve-bars">
                     <div
