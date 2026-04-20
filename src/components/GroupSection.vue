@@ -11,6 +11,28 @@
             <v-chip size="x-small" variant="tonal">
                 {{ totalCount }} card{{ totalCount === 1 ? "" : "s" }}
             </v-chip>
+            <div class="grouped-actions">
+                <v-btn
+                    icon="mdi-plus"
+                    size="x-small"
+                    variant="tonal"
+                    color="success"
+                    density="comfortable"
+                    :disabled="addableCount === 0"
+                    :title="addTitle"
+                    @click="addAll"
+                />
+                <v-btn
+                    icon="mdi-minus"
+                    size="x-small"
+                    variant="tonal"
+                    color="error"
+                    density="comfortable"
+                    :disabled="inDeckCount === 0"
+                    :title="removeTitle"
+                    @click="removeAll"
+                />
+            </div>
         </header>
 
         <div v-if="group.stacks" class="grouped-row">
@@ -61,11 +83,55 @@ const pipSize = computed(() => {
     return 20;
 });
 
-function countStacks(g) {
-    if (g.stacks) return g.stacks.reduce((sum, s) => sum + s.count, 0);
-    if (g.children) return g.children.reduce((sum, c) => sum + countStacks(c), 0);
-    return 0;
+function collectStacks(g, out) {
+    if (g.stacks) {
+        for (const s of g.stacks) out.push(s);
+    }
+    if (g.children) {
+        for (const child of g.children) collectStacks(child, out);
+    }
+    return out;
 }
 
-const totalCount = computed(() => countStacks(props.group));
+const allStacks = computed(() => collectStacks(props.group, []));
+
+const totalCount = computed(() =>
+    allStacks.value.reduce((sum, s) => sum + s.count, 0)
+);
+
+const addableCount = computed(() =>
+    allStacks.value.reduce((sum, s) => sum + (s.total - s.inDeck), 0)
+);
+
+const inDeckCount = computed(() =>
+    allStacks.value.reduce((sum, s) => sum + s.inDeck, 0)
+);
+
+const addTitle = computed(() =>
+    addableCount.value === 0
+        ? "All cards in this group are already in the deck"
+        : `Add ${addableCount.value} card${addableCount.value === 1 ? "" : "s"} to deck`
+);
+
+const removeTitle = computed(() =>
+    inDeckCount.value === 0
+        ? "No cards in this group are in the deck"
+        : `Remove ${inDeckCount.value} card${inDeckCount.value === 1 ? "" : "s"} from deck`
+);
+
+function addAll() {
+    const ids = [];
+    for (const s of allStacks.value) {
+        for (const id of s.poolIds) ids.push(id);
+    }
+    cards.addPoolIdsToDeck(ids);
+}
+
+function removeAll() {
+    const ids = [];
+    for (const s of allStacks.value) {
+        for (const id of s.poolIds) ids.push(id);
+    }
+    cards.removePoolIdsFromDeck(ids);
+}
 </script>

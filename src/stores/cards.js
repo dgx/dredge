@@ -374,6 +374,22 @@ export const useCardStore = defineStore("cards", () => {
         }
     }
 
+    function addPoolIdsToDeck(poolIds) {
+        if (!poolIds || poolIds.length === 0) return;
+        const next = new Set(deckIds.value);
+        const before = next.size;
+        for (const id of poolIds) next.add(id);
+        if (next.size !== before) deckIds.value = next;
+    }
+
+    function removePoolIdsFromDeck(poolIds) {
+        if (!poolIds || poolIds.length === 0) return;
+        const next = new Set(deckIds.value);
+        const before = next.size;
+        for (const id of poolIds) next.delete(id);
+        if (next.size !== before) deckIds.value = next;
+    }
+
     function adjustBasicLand(color, delta) {
         if (!BASIC_COLORS.includes(color)) return;
         const current = basicLands.value[color] || 0;
@@ -436,6 +452,8 @@ export const useCardStore = defineStore("cards", () => {
         setSealedMode,
         addCardToDeck,
         removeCardFromDeck,
+        addPoolIdsToDeck,
+        removePoolIdsFromDeck,
         adjustBasicLand,
         setBasicLand,
         clearDeck,

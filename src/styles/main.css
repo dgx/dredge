@@ -644,6 +644,20 @@ body {
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.grouped-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    opacity: 0.55;
+    transition: opacity 0.15s ease;
+}
+
+.grouped-header:hover .grouped-actions,
+.grouped-actions:focus-within {
+    opacity: 1;
+}
+
 .grouped-header-1 {
     border-bottom-color: rgba(255, 255, 255, 0.05);
     padding: 2px 0;
