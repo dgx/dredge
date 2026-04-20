@@ -17,7 +17,7 @@
         <div
             class="card-stack-main"
             :title="actionHint"
-            @click="onClick"
+            @mousedown.left="onPrimaryAction"
             @contextmenu.prevent="onRightClick"
         >
             <CardItem :card="stack.card" />
@@ -37,6 +37,7 @@
                 color="surface-variant"
                 variant="elevated"
                 :title="'View details for ' + stack.card.name"
+                @mousedown.stop
                 @click.stop="openDetail"
             />
             <v-avatar
@@ -80,7 +81,7 @@ const actionHint = computed(() =>
         : `Click to remove from deck (${props.stack.inDeck}/${props.stack.total} in deck) — right-click to add back`
 );
 
-function onClick() {
+function onPrimaryAction() {
     if (isAllView.value) {
         cards.addCardToDeck(props.stack.poolIds);
     } else {
