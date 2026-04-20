@@ -25,12 +25,29 @@
                 <div class="deck-count-value" :class="countClass">
                     {{ cards.deckTotal }} <span class="deck-count-target">/ 40</span>
                 </div>
-                <div class="deck-count-breakdown">
-                    <span>{{ cards.deckCreatureCount }} creatures</span>
-                    <span>•</span>
-                    <span>{{ cards.deckNonCreatureNonLandCount }} other spells</span>
-                    <span>•</span>
-                    <span>{{ cards.deckLandCount }} lands</span>
+            </div>
+
+            <div class="summary-section">
+                <h3>Card Types</h3>
+                <div class="curve-bars">
+                    <div
+                        v-for="key in typeKeys"
+                        :key="key"
+                        class="curve-row curve-row--type"
+                    >
+                        <ManaPip kind="type" :value="key" :size="22" />
+                        <span class="curve-type-label">{{ key }}</span>
+                        <div class="curve-bar">
+                            <div
+                                v-for="seg in segments(cards.typeCurve[key], typeMax)"
+                                :key="seg.key"
+                                class="curve-bar-seg"
+                                :title="`${seg.label}: ${seg.count}`"
+                                :style="{ width: seg.pct + '%', background: seg.color }"
+                            />
+                        </div>
+                        <span class="curve-value">{{ cards.typeCurve[key].count }}</span>
+                    </div>
                 </div>
             </div>
 
@@ -51,7 +68,7 @@
                         </v-avatar>
                         <div class="curve-bar">
                             <div
-                                v-for="seg in segments(bucket)"
+                                v-for="seg in segments(bucket, curveMax)"
                                 :key="seg.key"
                                 class="curve-bar-seg"
                                 :title="`${seg.label}: ${seg.count}`"
@@ -131,6 +148,18 @@ const curveMax = computed(() => {
     return max;
 });
 
+const typeKeys = computed(() =>
+    Object.keys(cards.typeCurve).filter((k) => cards.typeCurve[k].count > 0)
+);
+
+const typeMax = computed(() => {
+    let max = 0;
+    for (const b of Object.values(cards.typeCurve)) {
+        if (b.count > max) max = b.count;
+    }
+    return max;
+});
+
 const COLOR_BG = {
     W: "#f0f2c0",
     U: "#b5cde3",
@@ -151,8 +180,8 @@ const COLOR_LABEL = {
     multi: "Multicolor",
 };
 
-function segments(bucket) {
-    if (curveMax.value === 0 || bucket.count === 0) return [];
+function segments(bucket, max) {
+    if (!max || !bucket || bucket.count === 0) return [];
     const entries = Object.entries(bucket.colors)
         .filter(([, n]) => n > 0)
         .sort((a, b) => b[1] - a[1]);
@@ -161,7 +190,7 @@ function segments(bucket) {
         count: n,
         label: COLOR_LABEL[key],
         color: COLOR_BG[key],
-        pct: (n / curveMax.value) * 100,
+        pct: (n / max) * 100,
     }));
 }
 

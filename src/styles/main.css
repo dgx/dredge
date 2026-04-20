@@ -864,16 +864,6 @@ body {
 .count-good { color: rgb(var(--v-theme-success)); }
 .count-over { color: rgb(var(--v-theme-warning)); }
 
-.deck-count-breakdown {
-    margin-top: 4px;
-    font-size: 11px;
-    opacity: 0.72;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    justify-content: center;
-}
-
 .summary-actions {
     margin-top: auto;
     padding-top: 16px;
@@ -911,6 +901,21 @@ body {
     grid-template-columns: 22px 1fr 20px;
     gap: 8px;
     align-items: center;
+}
+
+.curve-row--type {
+    grid-template-columns: 22px 76px 1fr 20px;
+    gap: 6px;
+}
+
+.curve-type-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0.82;
 }
 
 .curve-pip {

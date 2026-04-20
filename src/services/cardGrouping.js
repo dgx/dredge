@@ -23,7 +23,7 @@ const COLOR_LABELS = {
     land: "Land",
 };
 
-const TYPE_ORDER = [
+export const TYPE_ORDER = [
     "Creature",
     "Planeswalker",
     "Instant",
@@ -55,7 +55,7 @@ function colorKey(card) {
     return colors;
 }
 
-function typeKey(card) {
+export function typeKey(card) {
     const main = card.mainType || (card.type || "").split(/[\s—-]/)[0] || "";
     const normalized = main.trim();
     for (const t of TYPE_ORDER) {

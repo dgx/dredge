@@ -2,7 +2,7 @@ import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import { parseCardDatabase } from "../services/cardDatabase";
 import { parseSealedPool } from "../services/sealedParser";
-import { groupCards, isLand } from "../services/cardGrouping";
+import { groupCards, isLand, typeKey, TYPE_ORDER } from "../services/cardGrouping";
 
 const BASIC_COLORS = ["W", "U", "B", "R", "G", "C"];
 const BASIC_LAND_NAMES = {
@@ -233,18 +233,33 @@ export const useCardStore = defineStore("cards", () => {
         return buckets;
     });
 
-    const deckCreatureCount = computed(() => {
-        let count = 0;
+    const typeCurve = computed(() => {
+        const buckets = {};
+        for (const t of TYPE_ORDER) {
+            buckets[t] = { count: 0, colors: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0, multi: 0 } };
+        }
         for (const id of deckIds.value) {
             const card = poolIdMap.value.get(id);
-            if (card && /creature/i.test(card.mainType || card.type)) count++;
+            if (!card) continue;
+            const bucket = buckets[typeKey(card)];
+            bucket.count++;
+            const distinct = new Set();
+            for (const ch of (card.colors || "").toUpperCase()) {
+                if ("WUBRG".includes(ch)) distinct.add(ch);
+            }
+            if (distinct.size === 0) bucket.colors.C++;
+            else if (distinct.size > 1) bucket.colors.multi++;
+            else bucket.colors[[...distinct][0]]++;
         }
-        return count;
+        const landBucket = buckets.Land;
+        for (const color of BASIC_COLORS) {
+            const n = basicLands.value[color] || 0;
+            if (n <= 0) continue;
+            landBucket.count += n;
+            landBucket.colors[color] += n;
+        }
+        return buckets;
     });
-
-    const deckNonCreatureNonLandCount = computed(() =>
-        Math.max(0, deckNonLandCount.value - deckCreatureCount.value)
-    );
 
     async function parseDatabase(xmlString) {
         const { sets: parsedSets, cards } = parseCardDatabase(xmlString);
@@ -401,13 +416,12 @@ export const useCardStore = defineStore("cards", () => {
         visibleStacks,
         groupedStacks,
         manaCurve,
+        typeCurve,
         deckTotal,
         deckNonLandCount,
         deckPoolLandCount,
         deckLandCount,
         basicLandTotal,
-        deckCreatureCount,
-        deckNonCreatureNonLandCount,
         BASIC_COLORS,
         BASIC_LAND_NAMES,
         parseDatabase,
