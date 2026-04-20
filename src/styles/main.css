@@ -163,13 +163,22 @@ body {
 }
 
 .color-filters {
-    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
 }
 
 .color-filters .color-btn {
-    width: 36px !important;
-    height: 36px !important;
-    min-width: 36px !important;
+    transition: opacity 0.15s ease, filter 0.15s ease;
+}
+
+.color-filters .color-btn--off {
+    opacity: 0.35;
+    filter: grayscale(1);
+}
+
+.color-filters .color-btn--off:hover {
+    opacity: 0.65;
 }
 
 .group-chips {

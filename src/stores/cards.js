@@ -58,10 +58,25 @@ export const useCardStore = defineStore("cards", () => {
 
     // Filters
     const searchQuery = ref("");
-    const colorFilter = ref([]);
+    const colorFilter = ref([...BASIC_COLORS]);
     const typeFilter = ref("");
     const rarityFilter = ref("");
     const sortBy = ref("name");
+
+    function setColorFilter(next) {
+        const arr = Array.isArray(next) ? next : [];
+        colorFilter.value = arr.length === 0 ? [...BASIC_COLORS] : arr;
+    }
+
+    function cardPassesColorFilter(card) {
+        const cardColors = (card.colors || "").toUpperCase();
+        if (!cardColors) return colorFilter.value.includes("C");
+        for (const ch of cardColors) {
+            if (!"WUBRG".includes(ch)) continue;
+            if (!colorFilter.value.includes(ch)) return false;
+        }
+        return true;
+    }
 
     function applyFilters(list) {
         let result = list;
@@ -73,15 +88,7 @@ export const useCardStore = defineStore("cards", () => {
             );
         }
 
-        if (colorFilter.value.length > 0) {
-            result = result.filter((c) => {
-                const cardColors = c.colors.toUpperCase();
-                if (colorFilter.value.includes("C")) {
-                    if (!cardColors) return true;
-                }
-                return colorFilter.value.some((color) => cardColors.includes(color));
-            });
-        }
+        result = result.filter(cardPassesColorFilter);
 
         if (typeFilter.value) {
             const t = typeFilter.value.toLowerCase();
@@ -165,13 +172,7 @@ export const useCardStore = defineStore("cards", () => {
         if (query && !card.name.toLowerCase().includes(query) && !card.text.toLowerCase().includes(query)) {
             return false;
         }
-        if (colorFilter.value.length > 0) {
-            const cardColors = card.colors.toUpperCase();
-            const isColorless = !cardColors;
-            const wantsColorless = colorFilter.value.includes("C");
-            const hasMatchingColor = colorFilter.value.some((c) => cardColors.includes(c));
-            if (!((wantsColorless && isColorless) || hasMatchingColor)) return false;
-        }
+        if (!cardPassesColorFilter(card)) return false;
         if (typeFilter.value) {
             if (!card.type.toLowerCase().includes(typeFilter.value.toLowerCase())) return false;
         }
@@ -262,7 +263,7 @@ export const useCardStore = defineStore("cards", () => {
 
     function resetFilters() {
         searchQuery.value = "";
-        colorFilter.value = [];
+        colorFilter.value = [...BASIC_COLORS];
         typeFilter.value = "";
         rarityFilter.value = "";
         sortBy.value = "name";
@@ -413,6 +414,7 @@ export const useCardStore = defineStore("cards", () => {
         selectCard,
         clearSelection,
         resetFilters,
+        setColorFilter,
         importSealedPool,
         clearSealedPool,
         openImport,

@@ -35,24 +35,20 @@
         <div class="bar-row bar-row--controls">
             <section class="control-cluster">
                 <span class="control-label">Filter</span>
-                <v-btn-toggle
-                    v-model="selectedColors"
-                    density="comfortable"
-                    multiple
-                    variant="outlined"
-                    class="color-filters"
-                >
+                <div class="color-filters">
                     <v-btn
                         v-for="color in colors"
                         :key="color.code"
-                        :value="color.code"
                         :title="color.label"
-                        class="color-btn"
+                        :class="['color-btn', { 'color-btn--off': !isColorEnabled(color.code) }]"
+                        variant="text"
+                        density="comfortable"
                         icon
+                        @click="toggleColor(color.code)"
                     >
-                        <ManaPip kind="color" :value="color.code" :size="26" />
+                        <ManaPip kind="color" :value="color.code" :size="28" />
                     </v-btn>
-                </v-btn-toggle>
+                </div>
                 <v-select
                     v-model="cards.typeFilter"
                     :items="typeItems"
@@ -103,7 +99,6 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
 import { useCardStore } from "../stores/cards";
 import ManaPip from "./ManaPip.vue";
 
@@ -118,10 +113,17 @@ const colors = [
     { code: "C", label: "Colorless" },
 ];
 
-const selectedColors = computed({
-    get: () => cards.colorFilter,
-    set: (v) => { cards.colorFilter = v; },
-});
+function isColorEnabled(code) {
+    return cards.colorFilter.includes(code);
+}
+
+function toggleColor(code) {
+    const current = cards.colorFilter;
+    const next = current.includes(code)
+        ? current.filter((c) => c !== code)
+        : [...current, code];
+    cards.setColorFilter(next);
+}
 
 const typeItems = [
     { title: "All Types", value: "" },
