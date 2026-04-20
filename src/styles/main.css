@@ -916,6 +916,19 @@ body {
     text-align: left;
 }
 
+.curve-bar {
+    display: flex;
+    height: 14px;
+    border-radius: 4px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.curve-bar-seg {
+    height: 100%;
+    transition: width 0.15s ease;
+}
+
 .land-counters {
     display: flex;
     flex-direction: column;

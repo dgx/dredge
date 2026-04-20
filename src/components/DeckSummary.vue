@@ -38,7 +38,7 @@
                 <h3>Mana Curve</h3>
                 <div class="curve-bars">
                     <div
-                        v-for="(count, key) in cards.manaCurve"
+                        v-for="(bucket, key) in cards.manaCurve"
                         :key="key"
                         class="curve-row"
                     >
@@ -49,14 +49,16 @@
                         >
                             <span>{{ key }}</span>
                         </v-avatar>
-                        <v-progress-linear
-                            :model-value="barValue(count)"
-                            color="primary"
-                            bg-color="surface-variant"
-                            height="14"
-                            rounded
-                        />
-                        <span class="curve-value">{{ count }}</span>
+                        <div class="curve-bar">
+                            <div
+                                v-for="seg in segments(bucket)"
+                                :key="seg.key"
+                                class="curve-bar-seg"
+                                :title="`${seg.label}: ${seg.count}`"
+                                :style="{ width: seg.pct + '%', background: seg.color }"
+                            />
+                        </div>
+                        <span class="curve-value">{{ bucket.count }}</span>
                     </div>
                 </div>
             </div>
@@ -123,15 +125,44 @@ const countClass = computed(() => {
 
 const curveMax = computed(() => {
     let max = 0;
-    for (const v of Object.values(cards.manaCurve)) {
-        if (v > max) max = v;
+    for (const b of Object.values(cards.manaCurve)) {
+        if (b.count > max) max = b.count;
     }
     return max;
 });
 
-function barValue(count) {
-    if (curveMax.value === 0) return 0;
-    return (count / curveMax.value) * 100;
+const COLOR_BG = {
+    W: "#f0f2c0",
+    U: "#b5cde3",
+    B: "#aca29a",
+    R: "#db8664",
+    G: "#93b483",
+    C: "#beb9b2",
+    multi: "#d8b75a",
+};
+
+const COLOR_LABEL = {
+    W: "White",
+    U: "Blue",
+    B: "Black",
+    R: "Red",
+    G: "Green",
+    C: "Colorless",
+    multi: "Multicolor",
+};
+
+function segments(bucket) {
+    if (curveMax.value === 0 || bucket.count === 0) return [];
+    const entries = Object.entries(bucket.colors)
+        .filter(([, n]) => n > 0)
+        .sort((a, b) => b[1] - a[1]);
+    return entries.map(([key, n]) => ({
+        key,
+        count: n,
+        label: COLOR_LABEL[key],
+        color: COLOR_BG[key],
+        pct: (n / curveMax.value) * 100,
+    }));
 }
 
 function confirmClear() {

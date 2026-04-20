@@ -209,13 +209,25 @@ export const useCardStore = defineStore("cards", () => {
     const deckTotal = computed(() => deckIds.value.size + basicLandTotal.value);
 
     const manaCurve = computed(() => {
-        const buckets = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, "7+": 0 };
+        const keys = ["0", "1", "2", "3", "4", "5", "6", "7+"];
+        const buckets = {};
+        for (const k of keys) {
+            buckets[k] = { count: 0, colors: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0, multi: 0 } };
+        }
         for (const id of deckIds.value) {
             const card = poolIdMap.value.get(id);
             if (!card || isLand(card)) continue;
             const cmc = Math.max(0, Math.floor(card.cmc || 0));
             const key = cmc >= 7 ? "7+" : String(cmc);
-            buckets[key]++;
+            const bucket = buckets[key];
+            bucket.count++;
+            const distinct = new Set();
+            for (const ch of (card.colors || "").toUpperCase()) {
+                if ("WUBRG".includes(ch)) distinct.add(ch);
+            }
+            if (distinct.size === 0) bucket.colors.C++;
+            else if (distinct.size > 1) bucket.colors.multi++;
+            else bucket.colors[[...distinct][0]]++;
         }
         return buckets;
     });
