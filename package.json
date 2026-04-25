@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "icon": "node scripts/generate-icon.cjs",
     "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron .\"",
     "electron:build": "vite build && electron-builder",
     "electron:build:win": "vite build && electron-builder --win --x64",
@@ -21,11 +22,12 @@
     },
     "files": [
       "dist/**/*",
-      "electron/**/*"
+      "electron/**/*",
+      "build/icon.png"
     ],
     "win": {
       "target": "nsis",
-      "icon": null
+      "icon": "build/icon.png"
     },
     "mac": {
       "target": {
@@ -33,7 +35,7 @@
         "arch": "arm64"
       },
       "category": "public.app-category.utilities",
-      "icon": null,
+      "icon": "build/icon.png",
       "identity": null
     }
   },
