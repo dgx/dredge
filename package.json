@@ -12,7 +12,13 @@
     "electron:build:win": "vite build && electron-builder --win --x64",
     "electron:build:mac": "vite build && electron-builder --mac --arm64",
     "electron:build:all": "vite build && electron-builder --win --x64 --mac --arm64",
-    "electron:preview": "vite build && cross-env NODE_ENV=production electron ."
+    "electron:preview": "vite build && cross-env NODE_ENV=production electron .",
+    "release": "node scripts/release.cjs minor",
+    "release:patch": "node scripts/release.cjs patch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dgx/dredge.git"
   },
   "build": {
     "appId": "com.dgx.dredge",
