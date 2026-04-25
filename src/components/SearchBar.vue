@@ -149,6 +149,7 @@ const GROUP_TYPES = [
     { value: "type", label: "Type" },
     { value: "color", label: "Color" },
     { value: "cmc", label: "Mana Cost" },
+    { value: "rarity", label: "Rarity" },
 ];
 
 function isGrouped(g) {

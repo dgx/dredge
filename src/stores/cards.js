@@ -36,7 +36,7 @@ export const useCardStore = defineStore("cards", () => {
     const basicLands = ref(emptyBasicLands());
     const GROUP_SLOTS = 3;
     const DEFAULT_GROUP_BY = ["color", "cmc", null];
-    const VALID_GROUP_TYPES = ["type", "color", "cmc"];
+    const VALID_GROUP_TYPES = ["type", "color", "cmc", "rarity"];
     const groupBy = ref([...DEFAULT_GROUP_BY]);
 
     function setGroupLevel(index, value) {

@@ -163,7 +163,7 @@ const typeMax = computed(() => {
 const COLOR_BG = {
     W: "#f0f2c0",
     U: "#b5cde3",
-    B: "#aca29a",
+    B: "#4a443d",
     R: "#db8664",
     G: "#93b483",
     C: "#beb9b2",
