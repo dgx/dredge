@@ -23,6 +23,16 @@ const COLOR_LABELS = {
     land: "Land",
 };
 
+const RARITY_ORDER = ["mythic", "rare", "uncommon", "common", "special", "unknown"];
+const RARITY_LABELS = {
+    mythic: "Mythic",
+    rare: "Rare",
+    uncommon: "Uncommon",
+    common: "Common",
+    special: "Special",
+    unknown: "Unknown",
+};
+
 export const TYPE_ORDER = [
     "Creature",
     "Planeswalker",
@@ -55,6 +65,13 @@ function colorKey(card) {
     return colors;
 }
 
+function rarityKey(card) {
+    const r = (card.rarity || "").toLowerCase().trim();
+    if (!r) return "unknown";
+    if (RARITY_LABELS[r]) return r;
+    return "special";
+}
+
 export function typeKey(card) {
     const main = card.mainType || (card.type || "").split(/[\s—-]/)[0] || "";
     const normalized = main.trim();
@@ -78,6 +95,7 @@ const GROUP_DEFS = {
         order: TYPE_ORDER,
         labels: Object.fromEntries(TYPE_ORDER.map((t) => [t, t])),
     },
+    rarity: { keyFn: rarityKey, order: RARITY_ORDER, labels: RARITY_LABELS },
 };
 
 function normalizeLevels(groupBy) {
