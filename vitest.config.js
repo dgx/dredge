@@ -13,10 +13,17 @@ export default defineConfig({
                 inline: ["vuetify"],
             },
         },
+        // Service/store tests don't touch the DOM and run far faster in node.
+        environmentMatchGlobs: [
+            ["tests/services/**", "node"],
+            ["tests/stores/**", "node"],
+            ["tests/components/**", "happy-dom"],
+        ],
         coverage: {
             provider: "v8",
             include: ["src/services/**", "src/stores/**", "src/components/**"],
             exclude: ["**/__tests__/**"],
+            reporter: ["text", "html"],
         },
     },
 });

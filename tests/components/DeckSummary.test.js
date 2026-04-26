@@ -85,4 +85,49 @@ describe("DeckSummary", () => {
         await w.find(".deck-summary-toggle").trigger("click");
         expect(cards.showSidebar).toBe(false);
     });
+
+    it("Clear with confirm=true calls store.clearDeck", async () => {
+        const w = mountWithVuetify(DeckSummary);
+        const cards = useCardStore();
+        cards.adjustBasicLand("R", 5);
+        await w.vm.$nextTick();
+        const spy = vi.spyOn(cards, "clearDeck");
+        const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+        const clear = w.findAll("button").find((b) => b.text().includes("Clear"));
+        await clear.trigger("click");
+        expect(confirmSpy).toHaveBeenCalled();
+        expect(spy).toHaveBeenCalled();
+        confirmSpy.mockRestore();
+    });
+
+    it("Clear with confirm=false does not clear the deck", async () => {
+        const w = mountWithVuetify(DeckSummary);
+        const cards = useCardStore();
+        cards.adjustBasicLand("R", 5);
+        await w.vm.$nextTick();
+        const spy = vi.spyOn(cards, "clearDeck");
+        const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+        const clear = w.findAll("button").find((b) => b.text().includes("Clear"));
+        await clear.trigger("click");
+        expect(spy).not.toHaveBeenCalled();
+        confirmSpy.mockRestore();
+    });
+
+    it("Copy Deck surfaces an alert when clipboard write fails", async () => {
+        navigator.clipboard.writeText = vi.fn().mockRejectedValue(new Error("blocked"));
+        const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
+        const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+        const w = mountWithVuetify(DeckSummary);
+        const cards = useCardStore();
+        cards.adjustBasicLand("R", 1);
+        await w.vm.$nextTick();
+        const copyBtn = w.findAll("button").find((b) => b.text().includes("Copy Deck"));
+        await copyBtn.trigger("click");
+        await new Promise((r) => setTimeout(r, 0));
+
+        expect(alertSpy).toHaveBeenCalled();
+        alertSpy.mockRestore();
+        errorSpy.mockRestore();
+    });
 });
