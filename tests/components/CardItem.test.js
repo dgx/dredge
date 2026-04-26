@@ -85,4 +85,93 @@ describe("CardItem", () => {
         const w = mountWithVuetify(CardItem, { props: { card: makeCard() } });
         expect(observed).not.toContain(w.find(".card-item").element);
     });
+
+    it("loads and shows the image after the viewport intersection debounce", async () => {
+        vi.useFakeTimers();
+        getCachedSync.mockReturnValue(null);
+        loadCardImage.mockResolvedValue("data:image/jpeg;base64,LOADED");
+
+        let capturedCb = null;
+        const disconnect = vi.fn();
+        globalThis.IntersectionObserver = function (cb) {
+            capturedCb = cb;
+            this.observe = () => {};
+            this.disconnect = disconnect;
+            this.unobserve = () => {};
+        };
+
+        const w = mountWithVuetify(CardItem, { props: { card: makeCard() } });
+        capturedCb([{ isIntersecting: true }]);
+        // Debounce
+        await vi.advanceTimersByTimeAsync(200);
+        // Let the awaited loadCardImage promise resolve
+        await vi.runAllTimersAsync();
+        vi.useRealTimers();
+        await w.vm.$nextTick();
+
+        expect(loadCardImage).toHaveBeenCalledTimes(1);
+        expect(disconnect).toHaveBeenCalled();
+        expect(w.find("img.card-image").attributes("src")).toBe("data:image/jpeg;base64,LOADED");
+    });
+
+    it("cancels a pending debounce when the card scrolls out of view", async () => {
+        vi.useFakeTimers();
+        getCachedSync.mockReturnValue(null);
+        loadCardImage.mockResolvedValue("never-arrives");
+
+        let capturedCb = null;
+        globalThis.IntersectionObserver = function (cb) {
+            capturedCb = cb;
+            this.observe = () => {};
+            this.disconnect = () => {};
+            this.unobserve = () => {};
+        };
+
+        mountWithVuetify(CardItem, { props: { card: makeCard() } });
+        capturedCb([{ isIntersecting: true }]);
+        // Scrolls out before debounce expires
+        capturedCb([{ isIntersecting: false }]);
+        await vi.advanceTimersByTimeAsync(500);
+        vi.useRealTimers();
+
+        expect(loadCardImage).not.toHaveBeenCalled();
+    });
+
+    it("disconnects the observer when the component unmounts", () => {
+        getCachedSync.mockReturnValue(null);
+        const disconnect = vi.fn();
+        globalThis.IntersectionObserver = function () {
+            this.observe = () => {};
+            this.disconnect = disconnect;
+            this.unobserve = () => {};
+        };
+        const w = mountWithVuetify(CardItem, { props: { card: makeCard() } });
+        w.unmount();
+        expect(disconnect).toHaveBeenCalled();
+    });
+
+    it("clears the loading spinner if loadCardImage resolves to null", async () => {
+        vi.useFakeTimers();
+        getCachedSync.mockReturnValue(null);
+        loadCardImage.mockResolvedValue(null);
+
+        let capturedCb = null;
+        globalThis.IntersectionObserver = function (cb) {
+            capturedCb = cb;
+            this.observe = () => {};
+            this.disconnect = () => {};
+            this.unobserve = () => {};
+        };
+
+        const w = mountWithVuetify(CardItem, { props: { card: makeCard() } });
+        capturedCb([{ isIntersecting: true }]);
+        await vi.advanceTimersByTimeAsync(200);
+        await vi.runAllTimersAsync();
+        vi.useRealTimers();
+        await w.vm.$nextTick();
+
+        // No image, but the spinner should be gone since loading=false
+        expect(w.find("img.card-image").exists()).toBe(false);
+        expect(w.find(".v-progress-circular").exists()).toBe(false);
+    });
 });
