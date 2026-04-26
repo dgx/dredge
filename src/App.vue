@@ -13,22 +13,39 @@
                     mandatory
                     class="no-drag"
                 >
-                    <v-btn value="sealed" size="small">Sealed Pool</v-btn>
+                    <v-btn value="sealed" size="small">
+                        {{ cards.hasImportedPool ? "Sealed Pool" : "Deck" }}
+                    </v-btn>
                     <v-btn value="all" size="small">All Cards</v-btn>
                 </v-btn-toggle>
 
                 <span v-if="!cards.sealedMode" class="card-count">
                     {{ cards.filteredCards.length.toLocaleString() }} cards
+                    <template v-if="cards.deckTotal > 0">
+                        · Deck <strong>{{ cards.deckTotal }}/{{ cards.deckSize }}</strong>
+                    </template>
                 </span>
                 <span v-else class="card-count">
-                    Deck <strong>{{ cards.deckTotal }}/40</strong>
+                    Deck <strong>{{ cards.deckTotal }}/{{ cards.deckSize }}</strong>
                     · Pool {{ poolRemaining }}
                 </span>
+
+                <v-btn-toggle
+                    :model-value="cards.deckSize"
+                    @update:model-value="(v) => cards.setDeckSize(v)"
+                    color="primary"
+                    density="compact"
+                    mandatory
+                    class="no-drag deck-size-toggle"
+                >
+                    <v-btn :value="40" size="small">40</v-btn>
+                    <v-btn :value="60" size="small">60</v-btn>
+                </v-btn-toggle>
 
                 <v-spacer />
 
                 <v-btn size="small" class="no-drag" @click="cards.openImport()">
-                    {{ cards.sealedPool.length > 0 ? "Re-import" : "Build Sealed Deck" }}
+                    {{ cards.hasImportedPool ? "Re-import" : "Build Sealed Deck" }}
                 </v-btn>
             </template>
         </header>
