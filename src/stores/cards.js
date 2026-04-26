@@ -285,7 +285,7 @@ export const useCardStore = defineStore("cards", () => {
     }
 
     function importSealedPool(text) {
-        const { entries, errors } = parseSealedPool(text);
+        const { entries, basicLands: parsedBasic, errors } = parseSealedPool(text);
         const nameMap = new Map();
         for (const card of allCards.value) {
             nameMap.set(card.name.toLowerCase(), card);
@@ -293,6 +293,7 @@ export const useCardStore = defineStore("cards", () => {
 
         const pool = [];
         const newErrors = errors.map((line) => ({ line, reason: "parse" }));
+        const initialDeckIds = new Set();
         let counter = 0;
 
         for (const entry of entries) {
@@ -306,16 +307,18 @@ export const useCardStore = defineStore("cards", () => {
             }
             const setEntry = card.sets.find((s) => s.code.toUpperCase() === entry.setCode.toUpperCase());
             for (let i = 0; i < entry.count; i++) {
+                const poolId = `pool-${counter++}`;
                 pool.push({
                     ...card,
                     uuid: setEntry?.uuid || card.uuid,
                     rarity: setEntry?.rarity || card.rarity,
                     bestSet: setEntry?.code || card.bestSet,
-                    poolId: `pool-${counter++}`,
+                    poolId,
                     poolSetCode: entry.setCode,
                     poolNumber: entry.number,
                     poolFoil: entry.foil,
                 });
+                if (entry.section === "main") initialDeckIds.add(poolId);
             }
         }
 
@@ -328,6 +331,8 @@ export const useCardStore = defineStore("cards", () => {
         showImport.value = false;
         resetFilters();
         clearDeck();
+        if (initialDeckIds.size > 0) deckIds.value = initialDeckIds;
+        basicLands.value = { ...emptyBasicLands(), ...parsedBasic };
         groupBy.value = [...DEFAULT_GROUP_BY];
         deckView.value = "all";
     }

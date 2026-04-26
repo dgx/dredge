@@ -1,7 +1,7 @@
 <template>
-    <div class="card-item" @click="$emit('click')">
+    <div class="card-item" ref="root" @click="$emit('click')">
         <div class="card-image-wrapper">
-            <img v-if="imageSrc" :src="imageSrc" :alt="card.name" class="card-image" loading="lazy" />
+            <img v-if="imageSrc" :src="imageSrc" :alt="card.name" class="card-image" />
             <div v-else class="card-placeholder">
                 <div class="placeholder-header">
                     <span class="placeholder-name">{{ card.name }}</span>
@@ -37,25 +37,61 @@ const props = defineProps({
 
 defineEmits(["click"]);
 
+const root = ref(null);
 const imageSrc = ref(getCachedSync(props.card));
 const loading = ref(!imageSrc.value);
 
+let observer = null;
 let abortController = null;
 let debounceTimer = null;
+let inFlight = false;
+
+async function tryLoad() {
+    if (imageSrc.value || inFlight) return;
+    inFlight = true;
+    abortController = new AbortController();
+    try {
+        const result = await loadCardImage(props.card, abortController.signal);
+        if (result) {
+            imageSrc.value = result;
+            observer?.disconnect();
+        }
+    } finally {
+        inFlight = false;
+        loading.value = false;
+    }
+}
+
+function cancelPending() {
+    clearTimeout(debounceTimer);
+    debounceTimer = null;
+    abortController?.abort();
+}
 
 onMounted(() => {
     if (imageSrc.value) return;
 
-    debounceTimer = setTimeout(async () => {
-        abortController = new AbortController();
-        const result = await loadCardImage(props.card, abortController.signal);
-        if (result) imageSrc.value = result;
-        loading.value = false;
-    }, 200);
+    observer = new IntersectionObserver(
+        (entries) => {
+            const entry = entries[0];
+            if (entry.isIntersecting) {
+                if (imageSrc.value || debounceTimer) return;
+                debounceTimer = setTimeout(() => {
+                    debounceTimer = null;
+                    tryLoad();
+                }, 200);
+            } else {
+                cancelPending();
+            }
+        },
+        { rootMargin: "200px" }
+    );
+
+    observer.observe(root.value);
 });
 
 onUnmounted(() => {
-    clearTimeout(debounceTimer);
-    abortController?.abort();
+    observer?.disconnect();
+    cancelPending();
 });
 </script>
