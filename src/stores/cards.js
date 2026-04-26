@@ -34,6 +34,8 @@ export const useCardStore = defineStore("cards", () => {
     // Deck-building state
     const deckIds = ref(new Set());
     const basicLands = ref(emptyBasicLands());
+    const deckSize = ref(40);
+    let syntheticCounter = 0;
     const GROUP_SLOTS = 3;
     const DEFAULT_GROUP_BY = ["color", "cmc", null];
     const VALID_GROUP_TYPES = ["type", "color", "cmc", "rarity"];
@@ -124,6 +126,20 @@ export const useCardStore = defineStore("cards", () => {
     const poolIdMap = computed(() => {
         const map = new Map();
         for (const c of sealedPool.value) map.set(c.poolId, c);
+        return map;
+    });
+
+    // True only when an actual sealed pool was imported (ignores synthetic adds from All Cards).
+    const hasImportedPool = computed(() => sealedPool.value.some((c) => !c.synthetic));
+
+    // Map of card name -> number of copies in deck (for All Cards badges).
+    const deckCountByName = computed(() => {
+        const map = new Map();
+        for (const id of deckIds.value) {
+            const card = poolIdMap.value.get(id);
+            if (!card) continue;
+            map.set(card.name, (map.get(card.name) || 0) + 1);
+        }
         return map;
     });
 
@@ -374,6 +390,7 @@ export const useCardStore = defineStore("cards", () => {
                 const next = new Set(deckIds.value);
                 next.delete(poolIds[i]);
                 deckIds.value = next;
+                gcSyntheticPool();
                 return;
             }
         }
@@ -392,7 +409,69 @@ export const useCardStore = defineStore("cards", () => {
         const next = new Set(deckIds.value);
         const before = next.size;
         for (const id of poolIds) next.delete(id);
-        if (next.size !== before) deckIds.value = next;
+        if (next.size !== before) {
+            deckIds.value = next;
+            gcSyntheticPool();
+        }
+    }
+
+    function addCardFromDatabase(card) {
+        if (!card) return;
+        const poolId = `synth-${syntheticCounter++}`;
+        const entry = { ...card, poolId, synthetic: true };
+        sealedPool.value = [...sealedPool.value, entry];
+        const next = new Set(deckIds.value);
+        next.add(poolId);
+        deckIds.value = next;
+    }
+
+    function removeOneByCard(card) {
+        if (!card) return;
+        const name = card.name;
+        let target = null;
+        let targetIsSynthetic = false;
+        // Prefer removing a synthetic copy first so All Cards adds toggle cleanly.
+        for (const id of deckIds.value) {
+            const entry = poolIdMap.value.get(id);
+            if (entry && entry.name === name && entry.synthetic) {
+                target = id;
+                targetIsSynthetic = true;
+                break;
+            }
+        }
+        if (!target) {
+            for (const id of deckIds.value) {
+                const entry = poolIdMap.value.get(id);
+                if (entry && entry.name === name) {
+                    target = id;
+                    break;
+                }
+            }
+        }
+        if (!target) return;
+        const next = new Set(deckIds.value);
+        next.delete(target);
+        deckIds.value = next;
+        if (targetIsSynthetic) {
+            sealedPool.value = sealedPool.value.filter((c) => c.poolId !== target);
+            gcSyntheticPool();
+        }
+    }
+
+    function gcSyntheticPool() {
+        const inDeck = deckIds.value;
+        const filtered = sealedPool.value.filter((c) => !c.synthetic || inDeck.has(c.poolId));
+        if (filtered.length !== sealedPool.value.length) {
+            sealedPool.value = filtered;
+        }
+        if (sealedPool.value.length === 0 && sealedMode.value) {
+            sealedMode.value = false;
+        }
+    }
+
+    function setDeckSize(size) {
+        const n = Number(size);
+        if (n === 40 || n === 60) deckSize.value = n;
     }
 
     function adjustBasicLand(color, delta) {
@@ -410,6 +489,7 @@ export const useCardStore = defineStore("cards", () => {
     function clearDeck() {
         deckIds.value = new Set();
         basicLands.value = emptyBasicLands();
+        gcSyntheticPool();
     }
 
     return {
@@ -424,6 +504,7 @@ export const useCardStore = defineStore("cards", () => {
         importErrors,
         deckIds,
         basicLands,
+        deckSize,
         groupBy,
         deckView,
         showSidebar,
@@ -443,6 +524,8 @@ export const useCardStore = defineStore("cards", () => {
         deckPoolLandCount,
         deckLandCount,
         basicLandTotal,
+        hasImportedPool,
+        deckCountByName,
         BASIC_COLORS,
         BASIC_LAND_NAMES,
         parseDatabase,
@@ -459,9 +542,12 @@ export const useCardStore = defineStore("cards", () => {
         removeCardFromDeck,
         addPoolIdsToDeck,
         removePoolIdsFromDeck,
+        addCardFromDatabase,
+        removeOneByCard,
         adjustBasicLand,
         setBasicLand,
         clearDeck,
+        setDeckSize,
         setGroupLevel,
         GROUP_SLOTS,
         VALID_GROUP_TYPES,

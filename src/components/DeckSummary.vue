@@ -23,7 +23,7 @@
                     Clear
                 </v-btn>
                 <div class="deck-count-value" :class="countClass">
-                    {{ cards.deckTotal }} <span class="deck-count-target">/ 40</span>
+                    {{ cards.deckTotal }} <span class="deck-count-target">/ {{ cards.deckSize }}</span>
                 </div>
             </div>
 
@@ -135,8 +135,8 @@ import ManaPip from "./ManaPip.vue";
 const cards = useCardStore();
 
 const countClass = computed(() => {
-    if (cards.deckTotal === 40) return "count-good";
-    if (cards.deckTotal > 40) return "count-over";
+    if (cards.deckTotal === cards.deckSize) return "count-good";
+    if (cards.deckTotal > cards.deckSize) return "count-over";
     return "count-under";
 });
 

@@ -7,11 +7,10 @@
                 class="card-row"
                 :style="{ position: 'absolute', top: row.top + 'px', left: 0, right: 0 }"
             >
-                <CardItem
+                <AllCardsTile
                     v-for="card in row.cards"
                     :key="card.poolId || card.name"
                     :card="card"
-                    @click="cards.selectCard(card)"
                 />
             </div>
         </div>
@@ -21,7 +20,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue";
 import { useCardStore } from "../stores/cards";
-import CardItem from "./CardItem.vue";
+import AllCardsTile from "./AllCardsTile.vue";
 
 const cards = useCardStore();
 const container = ref(null);
