@@ -18,15 +18,23 @@ export function parseSealedPool(text) {
     const entries = [];
     const errors = [];
     const basicLands = { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 };
+    // Signals that the paste came from a deck export (vs. a raw sealed pool).
+    let hasSideboard = false;
+    let hasComment = false;
+    let hasBareBasicLand = false;
 
     const lines = text.split(/\r?\n/);
     for (const raw of lines) {
         const line = raw.trim();
         if (!line) continue;
-        if (line.startsWith("//") || line.startsWith("#")) continue;
+        if (line.startsWith("//") || line.startsWith("#")) {
+            hasComment = true;
+            continue;
+        }
 
         const sb = /^SB:\s*/i.exec(line);
         const section = sb ? "sideboard" : "main";
+        if (sb) hasSideboard = true;
         const body = sb ? line.slice(sb[0].length) : line;
 
         let m = body.match(COCKATRICE_RE);
@@ -62,6 +70,7 @@ export function parseSealedPool(text) {
             const [, count, name] = m;
             const color = BASIC_LAND_TO_COLOR[name.trim().toLowerCase()];
             if (color) {
+                hasBareBasicLand = true;
                 if (section === "main") basicLands[color] += parseInt(count, 10);
                 continue;
             }
@@ -70,5 +79,6 @@ export function parseSealedPool(text) {
         errors.push(line);
     }
 
-    return { entries, basicLands, errors };
+    const looksLikeDeck = hasSideboard || hasComment || hasBareBasicLand;
+    return { entries, basicLands, errors, looksLikeDeck };
 }
