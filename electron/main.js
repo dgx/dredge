@@ -114,3 +114,52 @@ ipcMain.handle("image:download", async (event, url, setCode, fileName) => {
 });
 
 ipcMain.handle("cache:getPath", () => getCacheDir());
+
+// --- MTGJSON booster data ---
+
+const MTGJSON_BASE = "https://mtgjson.com/api/v5";
+const SETLIST_TTL_MS = 24 * 60 * 60 * 1000; // 24h — new sets release on a slow cadence
+
+function getBoosterCacheDir() {
+    const dir = path.join(app.getPath("userData"), "boosterCache");
+    fs.mkdirSync(dir, { recursive: true });
+    return dir;
+}
+
+async function fetchJson(url) {
+    const res = await fetch(url, {
+        headers: {
+            "User-Agent": "Dredge/0.1",
+            "Accept": "application/json",
+        },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${url}`);
+    return res.json();
+}
+
+ipcMain.handle("mtgjson:fetchSetList", async () => {
+    const filePath = path.join(getBoosterCacheDir(), "SetList.json");
+    if (fs.existsSync(filePath)) {
+        const stat = await fs.promises.stat(filePath);
+        if (Date.now() - stat.mtimeMs < SETLIST_TTL_MS) {
+            const text = await fs.promises.readFile(filePath, "utf-8");
+            return JSON.parse(text);
+        }
+    }
+    const json = await fetchJson(`${MTGJSON_BASE}/SetList.json`);
+    await fs.promises.writeFile(filePath, JSON.stringify(json));
+    return json;
+});
+
+ipcMain.handle("mtgjson:fetchSet", async (event, setCode) => {
+    const code = String(setCode || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+    if (!code) throw new Error("setCode required");
+    const filePath = path.join(getBoosterCacheDir(), `${code}.json`);
+    if (fs.existsSync(filePath)) {
+        const text = await fs.promises.readFile(filePath, "utf-8");
+        return JSON.parse(text);
+    }
+    const json = await fetchJson(`${MTGJSON_BASE}/${code}.json`);
+    await fs.promises.writeFile(filePath, JSON.stringify(json));
+    return json;
+});

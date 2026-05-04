@@ -30,5 +30,18 @@ export function installBrowserFallback() {
         async getCachePath() {
             return "(browser memory)";
         },
+
+        async fetchMtgjsonSetList() {
+            const res = await fetch("/api/mtgjson/SetList.json");
+            if (!res.ok) throw new Error(`SetList fetch failed: ${res.status}`);
+            return res.json();
+        },
+
+        async fetchMtgjsonSet(setCode) {
+            const code = String(setCode || "").toUpperCase();
+            const res = await fetch(`/api/mtgjson/${code}.json`);
+            if (!res.ok) throw new Error(`Set ${code} fetch failed: ${res.status}`);
+            return res.json();
+        },
     };
 }

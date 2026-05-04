@@ -69,6 +69,9 @@
                 >
                     Back to current pool ({{ cards.sealedPool.length }})
                 </v-btn>
+                <v-btn size="small" @click="startDraft" prepend-icon="mdi-package-variant-closed">
+                    Start a Draft instead
+                </v-btn>
                 <v-btn size="small" @click="browseAll">
                     Browse all cards instead
                 </v-btn>
@@ -111,5 +114,9 @@ function backToPool() {
 function browseAll() {
     cards.setSealedMode(false);
     cards.closeImport();
+}
+
+function startDraft() {
+    cards.openDraft();
 }
 </script>

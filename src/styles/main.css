@@ -25,13 +25,17 @@ body {
     flex-direction: column;
 }
 
-/* Frameless Electron titlebar */
+/* Frameless Electron titlebar.
+   Right padding reserves space for the Windows caption-control strip
+   (min/max/close), which overlays the right ~152px of the titlebar in
+   frameless mode. Without this, action buttons (Draft, Build Sealed Deck)
+   slide under the close button on Windows. */
 .app-titlebar {
     position: relative;
     display: flex;
     align-items: center;
     gap: 14px;
-    padding: 0 18px;
+    padding: 0 168px 0 18px;
     height: 40px;
     background:
         linear-gradient(180deg, rgba(255, 215, 120, 0.04) 0%, rgba(0, 0, 0, 0) 60%),
@@ -43,9 +47,9 @@ body {
 }
 
 /* Vertical divider at the left edge of the Windows caption-control overlay,
-   mirroring the separator after the "Dredge" wordmark. Uses the Window
-   Controls Overlay env vars when available, otherwise falls back to the
-   typical Win11 caption-button strip width. */
+   mirroring the separator after the "Dredge" wordmark. The 152px lines up
+   with the typical Win11 caption-button strip width (matches the right
+   padding above, minus a hair of breathing room). */
 .app-titlebar::after {
     content: "";
     position: absolute;
