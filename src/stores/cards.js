@@ -29,6 +29,10 @@ export const useCardStore = defineStore("cards", () => {
     const sealedPool = ref([]);
     const sealedMode = ref(false);
     const showImport = ref(true);
+    // Default to the pack-opening view on launch — that's the primary workflow
+    // for the sealed-deck format. Users can navigate to the existing pool or
+    // browse-all from buttons in DraftSetup.
+    const showDraft = ref(true);
     const importErrors = ref([]);
 
     // Deck-building state
@@ -353,6 +357,27 @@ export const useCardStore = defineStore("cards", () => {
         deckView.value = "all";
     }
 
+    // Append already-resolved pool entries (from the draft flow) onto the
+    // sealed pool. Switches into sealed/deckbuilder mode without touching
+    // basic-land tracking or the existing deck.
+    function appendDraftedCards(entries) {
+        if (!entries || entries.length === 0) return;
+        sealedPool.value = [...sealedPool.value, ...entries];
+        sealedMode.value = true;
+        showImport.value = false;
+        importErrors.value = [];
+    }
+
+    function startFreshDraftPool() {
+        sealedPool.value = [];
+        importErrors.value = [];
+        clearDeck();
+        basicLands.value = emptyBasicLands();
+        groupBy.value = [...DEFAULT_GROUP_BY];
+        deckView.value = "all";
+        resetFilters();
+    }
+
     function clearSealedPool() {
         sealedPool.value = [];
         importErrors.value = [];
@@ -363,10 +388,21 @@ export const useCardStore = defineStore("cards", () => {
 
     function openImport() {
         showImport.value = true;
+        showDraft.value = false;
     }
 
     function closeImport() {
         showImport.value = false;
+        showDraft.value = false;
+    }
+
+    function openDraft() {
+        showDraft.value = true;
+        showImport.value = false;
+    }
+
+    function closeDraft() {
+        showDraft.value = false;
     }
 
     function setSealedMode(on) {
@@ -501,6 +537,7 @@ export const useCardStore = defineStore("cards", () => {
         sealedPool,
         sealedMode,
         showImport,
+        showDraft,
         importErrors,
         deckIds,
         basicLands,
@@ -534,9 +571,13 @@ export const useCardStore = defineStore("cards", () => {
         resetFilters,
         setColorFilter,
         importSealedPool,
+        appendDraftedCards,
+        startFreshDraftPool,
         clearSealedPool,
         openImport,
         closeImport,
+        openDraft,
+        closeDraft,
         setSealedMode,
         addCardToDeck,
         removeCardFromDeck,
