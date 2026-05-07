@@ -31,12 +31,15 @@
 
                     <div class="row-symbol">
                         <img
-                            v-if="sel.setCode"
+                            v-if="sel.setCode && !symbolFailed(sel.setCode)"
                             :src="setSymbolUrl(sel.setCode)"
                             :alt="sel.setCode"
                             class="set-symbol-large"
-                            @error="onSymbolError"
+                            @error="onSymbolError(sel.setCode)"
                         />
+                        <span v-else-if="sel.setCode" class="set-symbol-fallback">
+                            {{ sel.setCode }}
+                        </span>
                         <span v-else class="set-symbol-placeholder">?</span>
                     </div>
 
@@ -46,13 +49,53 @@
                         :items="setItems"
                         item-title="label"
                         item-value="code"
-                        label="Set"
+                        :label="picksLocked ? 'Loading sets…' : 'Set'"
+                        :loading="picksLocked"
                         density="compact"
                         variant="outlined"
                         hide-details
-                        :loading="draft.loadingSets.has(sel.setCode)"
                         class="set-picker"
-                    />
+                        :menu-props="{ width: 360 }"
+                    >
+                        <template #no-data>
+                            <v-list-item v-if="picksLocked" class="set-picker-loading">
+                                <template #prepend>
+                                    <v-progress-circular
+                                        indeterminate
+                                        size="18"
+                                        width="2"
+                                    />
+                                </template>
+                                <v-list-item-title>Loading sets…</v-list-item-title>
+                            </v-list-item>
+                            <v-list-item v-else>
+                                <v-list-item-title>No sets match</v-list-item-title>
+                            </v-list-item>
+                        </template>
+
+                        <template #item="{ props, item }">
+                            <v-list-item
+                                v-bind="props"
+                                :title="item.name"
+                                :subtitle="itemSubtitle(item)"
+                            >
+                                <template #prepend>
+                                    <div class="set-row-symbol-wrap">
+                                        <img
+                                            v-if="!symbolFailed(item.code)"
+                                            :src="setSymbolUrl(item.code)"
+                                            :alt="item.code"
+                                            class="set-symbol-row"
+                                            @error="onSymbolError(item.code)"
+                                        />
+                                        <span v-else class="set-symbol-fallback">
+                                            {{ item.code }}
+                                        </span>
+                                    </div>
+                                </template>
+                            </v-list-item>
+                        </template>
+                    </v-autocomplete>
 
                     <v-text-field
                         :model-value="sel.count"
@@ -176,38 +219,80 @@ import { computed, onMounted, ref, watch } from "vue";
 import { useDraftStore } from "../stores/draft";
 import { useCardStore } from "../stores/cards";
 import { setMuted, unlockAudio } from "../services/packAudio";
+import {
+    noBoosterSets,
+    scanAvailability,
+    scanning as availabilityScanning,
+    markNoBooster,
+} from "../services/boosterAvailability";
 
 const draft = useDraftStore();
 const cards = useCardStore();
 const clipboardError = ref("");
 
 onMounted(() => {
-    draft.loadSetOptions();
     setMuted(draft.muted);
+    // Kick both off in parallel — they share the SetList in-flight promise.
+    // The autocomplete is gated on `picksLocked` so the user can't interact
+    // with a partially-known list.
+    draft.loadSetOptions();
+    scanAvailability();
 });
+
+// The picker is disabled (and shows Vuetify's loading bar) while the set list
+// is loading OR while we're determining which sets have no booster data.
+// Either condition could change membership, and we don't want entries to
+// appear or disappear while the user is browsing.
+const picksLocked = computed(
+    () => draft.setOptionsLoading || availabilityScanning.value
+);
 
 watch(
     () => draft.muted,
     (m) => setMuted(m)
 );
 
-const setItems = computed(() =>
-    draft.setOptions.map((s) => {
-        const year = s.releaseDate ? s.releaseDate.slice(0, 4) : "";
-        const label = year
-            ? `${s.name} — ${s.code} — ${year}`
-            : `${s.name} — ${s.code}`;
-        return { ...s, label };
-    })
-);
+const setItems = computed(() => {
+    const hidden = noBoosterSets.value;
+    return draft.setOptions
+        .filter((s) => !hidden.has(String(s.code).toUpperCase()))
+        .map((s) => {
+            const year = s.releaseDate ? s.releaseDate.slice(0, 4) : "";
+            // label is both what's displayed in the input and what Vuetify's
+            // built-in filter searches — include name, code, and year so any
+            // of those work as a typeahead query.
+            const label = year
+                ? `${s.name} — ${s.code} — ${year}`
+                : `${s.name} — ${s.code}`;
+            return { ...s, label };
+        });
+});
+
+const failedSymbols = ref(new Set());
 
 function setSymbolUrl(code) {
     if (!code) return "";
     return `https://svgs.scryfall.io/sets/${code.toLowerCase()}.svg`;
 }
 
-function onSymbolError(e) {
-    e.target.style.visibility = "hidden";
+function symbolFailed(code) {
+    return failedSymbols.value.has(String(code || "").toUpperCase());
+}
+
+function onSymbolError(code) {
+    const upper = String(code || "").toUpperCase();
+    if (failedSymbols.value.has(upper)) return;
+    const next = new Set(failedSymbols.value);
+    next.add(upper);
+    failedSymbols.value = next;
+}
+
+function itemSubtitle(s) {
+    const parts = [s.code];
+    if (s.releaseDate) parts.push(s.releaseDate.slice(0, 4));
+    if (s.type) parts.push(prettyTypeName(s.type));
+    if (s.baseSetSize) parts.push(`${s.baseSetSize} cards`);
+    return parts.join(" · ");
 }
 
 function clampCount(v) {
@@ -231,27 +316,31 @@ function rowError(sel) {
     if (!sel.setCode) return null;
     const err = draft.setLoadErrors.get(sel.setCode);
     if (err) return `Failed to load: ${err}`;
-    const data = draft.loadedSetData.get(sel.setCode);
-    if (data && draft.boosterTypesFor(sel.setCode).length === 0) {
-        return "This set has no draft-friendly booster data.";
-    }
     return null;
 }
 
 async function onSetChange(id, code) {
     draft.updateSelection(id, { setCode: code, boosterType: "" });
-    if (code) {
-        try {
-            await draft.ensureSetData(code);
-            // Pre-pick a default booster type so the dropdown reflects what
-            // we'll roll if the user doesn't change it.
-            const types = draft.boosterTypesFor(code);
-            if (types.length > 0) {
-                draft.updateSelection(id, { boosterType: types[0] });
-            }
-        } catch {
-            // Error surfaces via rowError.
+    if (!code) return;
+    try {
+        const data = await draft.ensureSetData(code);
+        const rawTypes = data?.booster ? Object.keys(data.booster) : [];
+        if (rawTypes.length === 0) {
+            // Brand-new set the background scan hasn't reached yet, or
+            // MTGJSON simply has no boosters for it. Hide it from the
+            // dropdown for good and silently clear the slot.
+            markNoBooster(code);
+            draft.updateSelection(id, { setCode: "", boosterType: "" });
+            return;
         }
+        // Pre-pick a default booster type so the dropdown reflects what
+        // we'll roll if the user doesn't change it.
+        const types = draft.boosterTypesFor(code);
+        if (types.length > 0) {
+            draft.updateSelection(id, { boosterType: types[0] });
+        }
+    } catch {
+        // Network/load error — leave the selection so rowError can surface it.
     }
 }
 
@@ -359,13 +448,43 @@ async function importFromClipboard() {
     width: 26px;
     height: 26px;
     object-fit: contain;
-    filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.6));
+    /* Scryfall serves black-on-transparent SVGs; invert to white so they
+     * read against the dark theme. */
+    filter: brightness(0) invert(1) drop-shadow(0 0 2px rgba(0, 0, 0, 0.7));
 }
 
 .set-symbol-placeholder {
     color: rgba(255, 215, 120, 0.45);
     font-weight: 700;
     font-family: var(--font-display, serif);
+}
+
+.set-symbol-fallback {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: rgba(255, 215, 120, 0.75);
+    text-transform: uppercase;
+}
+
+/* Fixed-size container so the prepend column is the same width whether it
+ * holds the SVG symbol or the text fallback — gives consistent spacing
+ * between the symbol slot and the title regardless of Vuetify's internals. */
+.set-row-symbol-wrap {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 16px;
+    flex-shrink: 0;
+}
+
+.set-symbol-row {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    filter: brightness(0) invert(1) drop-shadow(0 0 2px rgba(0, 0, 0, 0.7));
 }
 
 .selection-row .row-error {

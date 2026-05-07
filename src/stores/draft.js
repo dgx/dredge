@@ -16,6 +16,7 @@ import {
     rollPack,
 } from "../services/boosterSimulator.js";
 import { buildScryfallIndex, resolvePack } from "../services/draftResolver.js";
+import { prewarmPackImages } from "../services/packImage.js";
 
 const DEFAULT_PACKS_PER_SET = 6;
 
@@ -247,6 +248,20 @@ export const useDraftStore = defineStore("draft", () => {
             packQueue.value = rolled;
             currentPackIndex.value = 0;
             phase.value = "opening";
+
+            // Prewarm pack box-art for every distinct (set, type) in the
+            // queue so the photo is already cached when PackArt renders.
+            // Fire-and-forget — failures fall back to the CSS pack art.
+            const seen = new Set();
+            const pairs = [];
+            for (const p of rolled) {
+                const type = p.simResult?.boosterType || "draft";
+                const key = `${p.setCode}|${type}`;
+                if (seen.has(key)) continue;
+                seen.add(key);
+                pairs.push({ setCode: p.setCode, boosterType: type });
+            }
+            prewarmPackImages(pairs);
         } catch (err) {
             error.value = err.message || String(err);
             phase.value = "setup";

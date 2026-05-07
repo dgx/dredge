@@ -1,6 +1,21 @@
 <template>
-    <div class="pack-art" :class="{ ripping: ripping, opened: opened }">
+    <div
+        class="pack-art"
+        :class="{
+            ripping: ripping,
+            opened: opened,
+            'has-photo': !!packImageUrl,
+            'photo-loading': photoLoading,
+        }"
+    >
         <div class="pack-foil" />
+        <img
+            v-if="packImageUrl"
+            :src="packImageUrl"
+            :alt="`${setName || setCode} booster pack`"
+            class="pack-photo"
+            draggable="false"
+        />
         <div class="pack-shimmer" />
         <div class="pack-banner-top">
             <span class="pack-set-name">{{ setName || setCode }}</span>
@@ -24,7 +39,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, watch, onUnmounted } from "vue";
+import { loadPackImage, getCachedPackImageSync } from "../services/packImage.js";
 
 // Deliberately tier-blind. The pack art is the same regardless of what's
 // inside — anything else spoils the contents before the user opens.
@@ -37,6 +53,50 @@ const props = defineProps({
 });
 
 const symbolFailed = ref(false);
+const packImageUrl = ref(null);
+// True between "we don't have a synchronous photo" and "the async load
+// resolved". While loading, we suppress the symbol/banner CSS overlays so
+// they don't flash for a frame before the photo paints over them.
+const photoLoading = ref(false);
+
+let activeAbort = null;
+
+function loadFor(setCode, boosterType) {
+    if (activeAbort) activeAbort.abort();
+    if (!setCode) {
+        packImageUrl.value = null;
+        photoLoading.value = false;
+        return;
+    }
+    const cached = getCachedPackImageSync(setCode, boosterType);
+    packImageUrl.value = cached;
+    // If we already had it in memory, skip the loading state entirely.
+    photoLoading.value = !cached;
+    const ac = new AbortController();
+    activeAbort = ac;
+    loadPackImage(setCode, boosterType, ac.signal)
+        .then((url) => {
+            // Drop the result if the props changed mid-flight.
+            if (ac.signal.aborted) return;
+            packImageUrl.value = url || null;
+            photoLoading.value = false;
+        })
+        .catch(() => {
+            if (ac.signal.aborted) return;
+            packImageUrl.value = null;
+            photoLoading.value = false;
+        });
+}
+
+watch(
+    () => [props.setCode, props.boosterType],
+    ([code, type]) => loadFor(code, type),
+    { immediate: true }
+);
+
+onUnmounted(() => {
+    if (activeAbort) activeAbort.abort();
+});
 
 const symbolUrl = computed(() =>
     props.setCode
@@ -86,6 +146,69 @@ const typeLabel = computed(() => {
     pointer-events: none;
 }
 
+/* Real pack box-art layered over the gold gradient. When loaded, its z-index
+ * sits above the foil but below the shimmer + flash, so the rip animation
+ * still flashes white over it.
+ *
+ * The photo is self-labeling (set name + booster type are baked into the
+ * artwork), so we hide the symbol/banner overlays when it's present — see
+ * `.pack-art.has-photo` rules below. */
+.pack-photo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+    opacity: 0;
+    animation: pack-photo-in 0.35s ease-out forwards;
+    pointer-events: none;
+    user-select: none;
+}
+
+@keyframes pack-photo-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.pack-art.has-photo .pack-symbol-wrap,
+.pack-art.has-photo .pack-banner-top,
+.pack-art.has-photo .pack-banner-bottom,
+.pack-art.has-photo .pack-rip-line {
+    display: none;
+}
+
+.pack-art.has-photo .pack-foil {
+    opacity: 0.35;
+    mix-blend-mode: overlay;
+}
+
+/* While the photo is loading we don't yet know whether it will resolve to a
+ * real image or null, so suppress the symbol/banner overlays. If it resolves,
+ * the photo paints in their place; if it doesn't, they fade in (see below).
+ *
+ * The result is no flash of "wrong" art: either the photo or the CSS art
+ * appears, never both in sequence. */
+.pack-art.photo-loading .pack-symbol-wrap,
+.pack-art.photo-loading .pack-banner-top,
+.pack-art.photo-loading .pack-banner-bottom,
+.pack-art.photo-loading .pack-rip-line {
+    opacity: 0;
+}
+
+/* Fade the CSS overlays in once we know there's no photo. */
+.pack-art:not(.photo-loading):not(.has-photo) .pack-symbol-wrap,
+.pack-art:not(.photo-loading):not(.has-photo) .pack-banner-top,
+.pack-art:not(.photo-loading):not(.has-photo) .pack-banner-bottom,
+.pack-art:not(.photo-loading):not(.has-photo) .pack-rip-line {
+    animation: pack-art-fade-in 0.25s ease-out;
+}
+
+@keyframes pack-art-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
 .pack-shimmer {
     position: absolute;
     inset: 0;
@@ -100,6 +223,7 @@ const typeLabel = computed(() => {
     animation: shimmer 4.5s infinite linear;
     pointer-events: none;
     mix-blend-mode: screen;
+    z-index: 2;
 }
 
 @keyframes shimmer {

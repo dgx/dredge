@@ -79,18 +79,17 @@ function makeFixtureSet() {
 }
 
 describe("isSkippedBoosterType", () => {
-    it("flags collector / prerelease / bundle / promo variants", () => {
-        expect(isSkippedBoosterType("collector")).toBe(true);
-        expect(isSkippedBoosterType("collector-sample")).toBe(true);
+    it("flags prerelease / bundle / promo variants", () => {
         expect(isSkippedBoosterType("prerelease")).toBe(true);
         expect(isSkippedBoosterType("bundle-promo")).toBe(true);
         expect(isSkippedBoosterType("chocobo-bundle")).toBe(true);
     });
 
-    it("does not flag draft/play/default", () => {
+    it("does not flag draft/play/default/collector", () => {
         expect(isSkippedBoosterType("draft")).toBe(false);
         expect(isSkippedBoosterType("play")).toBe(false);
         expect(isSkippedBoosterType("default")).toBe(false);
+        expect(isSkippedBoosterType("collector")).toBe(false);
     });
 });
 
@@ -142,9 +141,9 @@ describe("pickBoosterType", () => {
 });
 
 describe("listDraftableBoosterTypes", () => {
-    it("orders by preference and excludes skipped", () => {
+    it("orders by preference; collector now passes through, prerelease still skipped", () => {
         const root = { collector: {}, play: {}, draft: {}, prerelease: {} };
-        expect(listDraftableBoosterTypes(root)).toEqual(["draft", "play"]);
+        expect(listDraftableBoosterTypes(root)).toEqual(["draft", "play", "collector"]);
     });
 });
 
@@ -154,8 +153,15 @@ describe("hasDraftableBooster", () => {
         expect(hasDraftableBooster({ booster, cards })).toBe(true);
     });
 
-    it("true when only collector/prerelease are present is FALSE (we filter)", () => {
-        expect(hasDraftableBooster({ booster: { collector: {} } })).toBe(false);
+    it("true when only collector is present (collector is allowed)", () => {
+        expect(hasDraftableBooster({ booster: { collector: {} } })).toBe(true);
+    });
+
+    it("false when only prerelease is present", () => {
+        expect(hasDraftableBooster({ booster: { prerelease: {} } })).toBe(false);
+    });
+
+    it("false when booster object is empty or missing", () => {
         expect(hasDraftableBooster({ booster: {} })).toBe(false);
         expect(hasDraftableBooster({})).toBe(false);
     });
@@ -294,10 +300,10 @@ describe("collectMissingSheetUuids", () => {
     });
 
     it("ignores non-draftable booster types when walking sheets", () => {
-        // The collector booster references c-w only; a missing collector-only
-        // UUID should NOT show up because we only check draftable types.
+        // A prerelease-only booster references absent-uuid, but prerelease is
+        // skipped — the walker should not flag the missing uuid.
         const booster = {
-            collector: {
+            prerelease: {
                 boosters: [{ weight: 1, contents: { common: 1 } }],
                 sheets: { common: { totalWeight: 1, cards: { "absent-uuid": 1 } } },
             },

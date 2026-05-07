@@ -39,16 +39,11 @@ function makeSetData(code) {
     };
 }
 
-function makeCollectorOnlySet(code) {
+function makeNoBoosterSet(code) {
     return {
         code,
         cards: [],
-        booster: {
-            collector: {
-                boosters: [{ weight: 1, contents: { common: 1 } }],
-                sheets: { common: { totalWeight: 1, cards: { x: 1 } } },
-            },
-        },
+        booster: {},
     };
 }
 
@@ -280,7 +275,7 @@ describe("useDraftStore - startDraft", () => {
     it("surfaces an error and stays in setup if a set lacks draftable booster data", async () => {
         installFakeElectron(
             [{ code: "BAD", name: "Bad", type: "expansion", releaseDate: "2024-01-01", baseSetSize: 1 }],
-            { BAD: makeCollectorOnlySet("BAD") }
+            { BAD: makeNoBoosterSet("BAD") }
         );
         const store = useDraftStore();
         store.updateSelection(store.selections[0].id, { setCode: "BAD", count: 1 });

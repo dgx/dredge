@@ -1,0 +1,726 @@
+{
+  "summary": {
+    "totalSets": 257,
+    "setsWithNoBoosterAtAll": 79,
+    "setsExcludedBySkipPatternsOnly": 2,
+    "setsWithDraftableTypesUnderCurrentRules": 176
+  },
+  "boosterTypeFrequency": {
+    "draft": 133,
+    "prerelease": 52,
+    "collector": 47,
+    "arena": 29,
+    "default": 24,
+    "fat-pack": 19,
+    "six": 19,
+    "collector-sample": 18,
+    "set": 18,
+    "play": 16,
+    "tournament": 13,
+    "theme-b": 12,
+    "theme-g": 12,
+    "theme-r": 12,
+    "theme-u": 12,
+    "theme-w": 12,
+    "box-topper": 10,
+    "starter": 9,
+    "jumpstart": 8,
+    "jp": 3,
+    "bundle-promo": 2,
+    "duelspromo": 2,
+    "chocobo-bundle": 1,
+    "chocobo-bundle-scene": 1,
+    "beginner": 1,
+    "play-arena": 1,
+    "box-topper-foil": 1,
+    "gift-bundle-promo": 1,
+    "collector-special": 1,
+    "jumpstart-v2": 1,
+    "compleat": 1,
+    "prerelease-brokers": 1,
+    "prerelease-cabaretti": 1,
+    "prerelease-maestros": 1,
+    "prerelease-obscura": 1,
+    "prerelease-riveteers": 1,
+    "theme-brokers": 1,
+    "theme-cabaretti": 1,
+    "theme-maestros": 1,
+    "theme-obscura": 1,
+    "theme-riveteers": 1,
+    "theme-ninjas": 1,
+    "theme-vampires": 1,
+    "theme-werewolves": 1,
+    "theme-dungeons": 1,
+    "set-jp": 1,
+    "theme-lorehold": 1,
+    "theme-prismari": 1,
+    "theme-quandrix": 1,
+    "theme-silverquill": 1,
+    "theme-witherbloom": 1,
+    "theme-vikings": 1,
+    "theme-party": 1,
+    "vip": 1,
+    "collector-jp": 1,
+    "theme-monsters": 1,
+    "theme-azorius": 1,
+    "theme-gruul": 1,
+    "theme-orzhov": 1,
+    "theme-rakdos": 1,
+    "theme-simic": 1,
+    "theme-boros": 1,
+    "theme-dimir": 1,
+    "theme-golgari": 1,
+    "theme-izzet": 1,
+    "theme-selesnya": 1,
+    "treasure-chest": 1,
+    "prerelease-atarka": 1,
+    "prerelease-dromoka": 1,
+    "prerelease-kolaghan": 1,
+    "prerelease-ojutai": 1,
+    "prerelease-silumgar": 1,
+    "prerelease-boros": 1,
+    "prerelease-dimir": 1,
+    "prerelease-gruul": 1,
+    "prerelease-orzhov": 1,
+    "prerelease-simic": 1,
+    "prerelease-azorius": 1,
+    "prerelease-golgari": 1,
+    "prerelease-izzet": 1,
+    "prerelease-rakdos": 1,
+    "prerelease-selesnya": 1,
+    "premium": 1
+  },
+  "skipPatternImpact": [
+    {
+      "pattern": "collector",
+      "matchedTypes": [
+        "collector",
+        "collector-jp",
+        "collector-sample",
+        "collector-special"
+      ]
+    },
+    {
+      "pattern": "prerelease",
+      "matchedTypes": [
+        "prerelease",
+        "prerelease-atarka",
+        "prerelease-azorius",
+        "prerelease-boros",
+        "prerelease-brokers",
+        "prerelease-cabaretti",
+        "prerelease-dimir",
+        "prerelease-dromoka",
+        "prerelease-golgari",
+        "prerelease-gruul",
+        "prerelease-izzet",
+        "prerelease-kolaghan",
+        "prerelease-maestros",
+        "prerelease-obscura",
+        "prerelease-ojutai",
+        "prerelease-orzhov",
+        "prerelease-rakdos",
+        "prerelease-riveteers",
+        "prerelease-selesnya",
+        "prerelease-silumgar",
+        "prerelease-simic"
+      ]
+    },
+    {
+      "pattern": "bundle",
+      "matchedTypes": [
+        "bundle-promo",
+        "chocobo-bundle",
+        "chocobo-bundle-scene",
+        "gift-bundle-promo"
+      ]
+    },
+    {
+      "pattern": "promo",
+      "matchedTypes": [
+        "bundle-promo",
+        "duelspromo",
+        "gift-bundle-promo"
+      ]
+    },
+    {
+      "pattern": "sample",
+      "matchedTypes": [
+        "collector-sample"
+      ]
+    },
+    {
+      "pattern": "gift",
+      "matchedTypes": [
+        "gift-bundle-promo"
+      ]
+    },
+    {
+      "pattern": "starter",
+      "matchedTypes": [
+        "starter"
+      ]
+    },
+    {
+      "pattern": "challenger",
+      "matchedTypes": []
+    },
+    {
+      "pattern": "welcome",
+      "matchedTypes": []
+    },
+    {
+      "pattern": "tournament",
+      "matchedTypes": [
+        "tournament"
+      ]
+    },
+    {
+      "pattern": "deckbuilder",
+      "matchedTypes": []
+    },
+    {
+      "pattern": "intropack",
+      "matchedTypes": []
+    },
+    {
+      "pattern": "fatpack",
+      "matchedTypes": []
+    },
+    {
+      "pattern": "boxtopper",
+      "matchedTypes": []
+    },
+    {
+      "pattern": "topper",
+      "matchedTypes": [
+        "box-topper",
+        "box-topper-foil"
+      ]
+    },
+    {
+      "pattern": "vip",
+      "matchedTypes": [
+        "vip"
+      ]
+    }
+  ],
+  "setsWithNoBoosterAtAll": [
+    {
+      "code": "FRA",
+      "name": "Reality Fracture",
+      "type": "expansion",
+      "releaseDate": "2026-10-02"
+    },
+    {
+      "code": "HOB",
+      "name": "The Hobbit",
+      "type": "expansion",
+      "releaseDate": "2026-08-14"
+    },
+    {
+      "code": "HOC",
+      "name": "The Hobbit Commander",
+      "type": "commander",
+      "releaseDate": "2026-08-14"
+    },
+    {
+      "code": "MSC",
+      "name": "Marvel Super Heroes Commander",
+      "type": "commander",
+      "releaseDate": "2026-06-26"
+    },
+    {
+      "code": "MSH",
+      "name": "Marvel Super Heroes",
+      "type": "expansion",
+      "releaseDate": "2026-06-26"
+    },
+    {
+      "code": "SOC",
+      "name": "Secrets of Strixhaven Commander",
+      "type": "commander",
+      "releaseDate": "2026-04-24"
+    },
+    {
+      "code": "ECC",
+      "name": "Lorwyn Eclipsed Commander",
+      "type": "commander",
+      "releaseDate": "2026-01-23"
+    },
+    {
+      "code": "PH23",
+      "name": "2023 Heroes of the Realm",
+      "type": "funny",
+      "releaseDate": "2025-08-24"
+    },
+    {
+      "code": "EOC",
+      "name": "Edge of Eternities Commander",
+      "type": "commander",
+      "releaseDate": "2025-08-01"
+    },
+    {
+      "code": "FIC",
+      "name": "Final Fantasy Commander",
+      "type": "commander",
+      "releaseDate": "2025-06-13"
+    },
+    {
+      "code": "TDC",
+      "name": "Tarkir: Dragonstorm Commander",
+      "type": "commander",
+      "releaseDate": "2025-04-11"
+    },
+    {
+      "code": "DRC",
+      "name": "Aetherdrift Commander",
+      "type": "commander",
+      "releaseDate": "2025-02-14"
+    },
+    {
+      "code": "FDC",
+      "name": "Foundations Commander",
+      "type": "commander",
+      "releaseDate": "2024-11-15"
+    },
+    {
+      "code": "DSC",
+      "name": "Duskmourn: House of Horror Commander",
+      "type": "commander",
+      "releaseDate": "2024-09-27"
+    },
+    {
+      "code": "BLC",
+      "name": "Bloomburrow Commander",
+      "type": "commander",
+      "releaseDate": "2024-08-02"
+    },
+    {
+      "code": "M3C",
+      "name": "Modern Horizons 3 Commander",
+      "type": "commander",
+      "releaseDate": "2024-06-14"
+    },
+    {
+      "code": "BIG",
+      "name": "The Big Score",
+      "type": "expansion",
+      "releaseDate": "2024-04-19"
+    },
+    {
+      "code": "OTC",
+      "name": "Outlaws of Thunder Junction Commander",
+      "type": "commander",
+      "releaseDate": "2024-04-19"
+    },
+    {
+      "code": "PUNK",
+      "name": "Black Lotus Unknown Planechase",
+      "type": "funny",
+      "releaseDate": "2024-02-24"
+    },
+    {
+      "code": "MKC",
+      "name": "Murders at Karlov Manor Commander",
+      "type": "commander",
+      "releaseDate": "2024-02-09"
+    },
+    {
+      "code": "LCC",
+      "name": "The Lost Caverns of Ixalan Commander",
+      "type": "commander",
+      "releaseDate": "2023-11-17"
+    },
+    {
+      "code": "WOC",
+      "name": "Wilds of Eldraine Commander",
+      "type": "commander",
+      "releaseDate": "2023-09-08"
+    },
+    {
+      "code": "PH22",
+      "name": "2022 Heroes of the Realm",
+      "type": "funny",
+      "releaseDate": "2023-08-01"
+    },
+    {
+      "code": "LTC",
+      "name": "Tales of Middle-earth Commander",
+      "type": "commander",
+      "releaseDate": "2023-06-23"
+    },
+    {
+      "code": "MOC",
+      "name": "March of the Machine Commander",
+      "type": "commander",
+      "releaseDate": "2023-04-21"
+    },
+    {
+      "code": "UNK",
+      "name": "Unknown Event",
+      "type": "funny",
+      "releaseDate": "2023-02-15"
+    },
+    {
+      "code": "ONC",
+      "name": "Phyrexia: All Will Be One Commander",
+      "type": "commander",
+      "releaseDate": "2023-02-10"
+    },
+    {
+      "code": "SCD",
+      "name": "Starter Commander Decks",
+      "type": "commander",
+      "releaseDate": "2022-12-02"
+    },
+    {
+      "code": "BRC",
+      "name": "The Brothers' War Commander",
+      "type": "commander",
+      "releaseDate": "2022-11-18"
+    },
+    {
+      "code": "40K",
+      "name": "Warhammer 40,000 Commander",
+      "type": "commander",
+      "releaseDate": "2022-10-07"
+    },
+    {
+      "code": "SUNF",
+      "name": "Unfinity Sticker Sheets",
+      "type": "funny",
+      "releaseDate": "2022-10-07"
+    },
+    {
+      "code": "ULST",
+      "name": "The List (Unfinity Foil Edition)",
+      "type": "funny",
+      "releaseDate": "2022-10-07"
+    },
+    {
+      "code": "DMC",
+      "name": "Dominaria United Commander",
+      "type": "commander",
+      "releaseDate": "2022-09-09"
+    },
+    {
+      "code": "PH21",
+      "name": "2021 Heroes of the Realm",
+      "type": "funny",
+      "releaseDate": "2022-08-01"
+    },
+    {
+      "code": "NCC",
+      "name": "New Capenna Commander",
+      "type": "commander",
+      "releaseDate": "2022-04-29"
+    },
+    {
+      "code": "SLX",
+      "name": "Universes Within",
+      "type": "masters",
+      "releaseDate": "2022-03-03"
+    },
+    {
+      "code": "NEC",
+      "name": "Neon Dynasty Commander",
+      "type": "commander",
+      "releaseDate": "2022-02-18"
+    },
+    {
+      "code": "VOC",
+      "name": "Crimson Vow Commander",
+      "type": "commander",
+      "releaseDate": "2021-11-19"
+    },
+    {
+      "code": "MIC",
+      "name": "Midnight Hunt Commander",
+      "type": "commander",
+      "releaseDate": "2021-09-24"
+    },
+    {
+      "code": "CMB2",
+      "name": "Mystery Booster Playtest Cards 2021",
+      "type": "funny",
+      "releaseDate": "2021-08-20"
+    },
+    {
+      "code": "PH20",
+      "name": "2020 Heroes of the Realm",
+      "type": "funny",
+      "releaseDate": "2021-08-01"
+    },
+    {
+      "code": "AFC",
+      "name": "Forgotten Realms Commander",
+      "type": "commander",
+      "releaseDate": "2021-07-23"
+    },
+    {
+      "code": "H1R",
+      "name": "Modern Horizons 1 Timeshifts",
+      "type": "draft_innovation",
+      "releaseDate": "2021-06-18"
+    },
+    {
+      "code": "C21",
+      "name": "Commander 2021",
+      "type": "commander",
+      "releaseDate": "2021-04-23"
+    },
+    {
+      "code": "KHC",
+      "name": "Kaldheim Commander",
+      "type": "commander",
+      "releaseDate": "2021-02-05"
+    },
+    {
+      "code": "PLST",
+      "name": "The List",
+      "type": "masters",
+      "releaseDate": "2020-09-26"
+    },
+    {
+      "code": "ZNC",
+      "name": "Zendikar Rising Commander",
+      "type": "commander",
+      "releaseDate": "2020-09-25"
+    },
+    {
+      "code": "PH19",
+      "name": "2019 Heroes of the Realm",
+      "type": "funny",
+      "releaseDate": "2020-08-01"
+    },
+    {
+      "code": "C20",
+      "name": "Commander 2020",
+      "type": "commander",
+      "releaseDate": "2020-04-17"
+    },
+    {
+      "code": "UND",
+      "name": "Unsanctioned",
+      "type": "funny",
+      "releaseDate": "2020-02-29"
+    },
+    {
+      "code": "CMB1",
+      "name": "Mystery Booster Playtest Cards 2019",
+      "type": "funny",
+      "releaseDate": "2019-11-07"
+    },
+    {
+      "code": "MB1",
+      "name": "Mystery Booster",
+      "type": "masters",
+      "releaseDate": "2019-11-07"
+    },
+    {
+      "code": "PTG",
+      "name": "Ponies: The Galloping",
+      "type": "funny",
+      "releaseDate": "2019-10-22"
+    },
+    {
+      "code": "C19",
+      "name": "Commander 2019",
+      "type": "commander",
+      "releaseDate": "2019-08-23"
+    },
+    {
+      "code": "PH18",
+      "name": "2018 Heroes of the Realm",
+      "type": "funny",
+      "releaseDate": "2019-08-01"
+    },
+    {
+      "code": "C18",
+      "name": "Commander 2018",
+      "type": "commander",
+      "releaseDate": "2018-08-10"
+    },
+    {
+      "code": "PH17",
+      "name": "2017 Heroes of the Realm",
+      "type": "funny",
+      "releaseDate": "2018-08-01"
+    },
+    {
+      "code": "CM2",
+      "name": "Commander Anthology Volume II",
+      "type": "commander",
+      "releaseDate": "2018-06-08"
+    },
+    {
+      "code": "H17",
+      "name": "HasCon 2017",
+      "type": "funny",
+      "releaseDate": "2017-09-20"
+    },
+    {
+      "code": "PHTR",
+      "name": "2016 Heroes of the Realm",
+      "type": "funny",
+      "releaseDate": "2017-09-20"
+    },
+    {
+      "code": "C17",
+      "name": "Commander 2017",
+      "type": "commander",
+      "releaseDate": "2017-08-25"
+    },
+    {
+      "code": "CMA",
+      "name": "Commander Anthology",
+      "type": "commander",
+      "releaseDate": "2017-06-09"
+    },
+    {
+      "code": "W17",
+      "name": "Welcome Deck 2017",
+      "type": "starter",
+      "releaseDate": "2017-04-15"
+    },
+    {
+      "code": "C16",
+      "name": "Commander 2016",
+      "type": "commander",
+      "releaseDate": "2016-11-11"
+    },
+    {
+      "code": "W16",
+      "name": "Welcome Deck 2016",
+      "type": "starter",
+      "releaseDate": "2016-04-08"
+    },
+    {
+      "code": "C15",
+      "name": "Commander 2015",
+      "type": "commander",
+      "releaseDate": "2015-11-13"
+    },
+    {
+      "code": "CP3",
+      "name": "Magic Origins Clash Pack",
+      "type": "starter",
+      "releaseDate": "2015-07-17"
+    },
+    {
+      "code": "CP2",
+      "name": "Fate Reforged Clash Pack",
+      "type": "starter",
+      "releaseDate": "2015-01-23"
+    },
+    {
+      "code": "C14",
+      "name": "Commander 2014",
+      "type": "commander",
+      "releaseDate": "2014-11-07"
+    },
+    {
+      "code": "CP1",
+      "name": "Magic 2015 Clash Pack",
+      "type": "starter",
+      "releaseDate": "2014-07-18"
+    },
+    {
+      "code": "C13",
+      "name": "Commander 2013",
+      "type": "commander",
+      "releaseDate": "2013-11-01"
+    },
+    {
+      "code": "CMD",
+      "name": "Commander 2011",
+      "type": "commander",
+      "releaseDate": "2011-06-17"
+    },
+    {
+      "code": "HHO",
+      "name": "Happy Holidays",
+      "type": "funny",
+      "releaseDate": "2006-12-31"
+    },
+    {
+      "code": "TSB",
+      "name": "Time Spiral Timeshifted",
+      "type": "expansion",
+      "releaseDate": "2006-10-06"
+    },
+    {
+      "code": "S00",
+      "name": "Starter 2000",
+      "type": "starter",
+      "releaseDate": "2000-04-01"
+    },
+    {
+      "code": "ITP",
+      "name": "Introductory Two-Player Set",
+      "type": "starter",
+      "releaseDate": "1996-12-31"
+    },
+    {
+      "code": "BCHR",
+      "name": "Chronicles Foreign Black Border",
+      "type": "masters",
+      "releaseDate": "1995-07-01"
+    },
+    {
+      "code": "4BB",
+      "name": "Fourth Edition Foreign Black Border",
+      "type": "core",
+      "releaseDate": "1995-04-01"
+    },
+    {
+      "code": "FBB",
+      "name": "Foreign Black Border",
+      "type": "core",
+      "releaseDate": "1994-04-11"
+    }
+  ],
+  "setsExcludedOnlyBySkipPatterns": [
+    {
+      "code": "PIP",
+      "name": "Fallout",
+      "type": "commander",
+      "releaseDate": "2024-03-08",
+      "boosterTypes": [
+        "collector",
+        "collector-sample"
+      ],
+      "wouldSurviveIfWeAllowed": [
+        {
+          "type": "collector",
+          "killedBy": "collector"
+        },
+        {
+          "type": "collector-sample",
+          "killedBy": "collector"
+        }
+      ]
+    },
+    {
+      "code": "WHO",
+      "name": "Doctor Who",
+      "type": "commander",
+      "releaseDate": "2023-10-13",
+      "boosterTypes": [
+        "collector",
+        "collector-sample"
+      ],
+      "wouldSurviveIfWeAllowed": [
+        {
+          "type": "collector",
+          "killedBy": "collector"
+        },
+        {
+          "type": "collector-sample",
+          "killedBy": "collector"
+        }
+      ]
+    }
+  ]
+}
