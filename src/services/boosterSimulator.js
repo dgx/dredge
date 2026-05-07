@@ -23,7 +23,6 @@
 // not collector-grade or scripted prerelease promos.
 const PREFERRED_TYPES = ["draft", "play", "default", "set", "arena"];
 const SKIP_PATTERNS = [
-    "collector",
     "prerelease",
     "bundle",
     "promo",

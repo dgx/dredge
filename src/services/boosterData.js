@@ -6,6 +6,7 @@ import { hasDraftableBooster, listDraftableBoosterTypes } from "./boosterSimulat
 
 const memSetCache = new Map();
 let memSetList = null;
+let memSetListMeta = null;
 let inFlightSetList = null;
 const inFlightSet = new Map();
 
@@ -29,6 +30,7 @@ export async function fetchSetList() {
         const json = await window.electronAPI.fetchMtgjsonSetList();
         const sets = (json?.data || []).map(normalizeSetListEntry);
         memSetList = sets;
+        memSetListMeta = json?.meta || null;
         return sets;
     })();
 
@@ -152,6 +154,13 @@ export async function fetchSetData(setCode) {
     }
 }
 
+// Returns the SetList meta block (date, version) — the cache invalidation key
+// for any data derived from the SetList. Caller must have already awaited
+// fetchSetList at least once.
+export function getSetListMeta() {
+    return memSetListMeta;
+}
+
 // Re-export so callers can avoid importing from two modules.
 export { hasDraftableBooster, listDraftableBoosterTypes };
 
@@ -159,6 +168,7 @@ export { hasDraftableBooster, listDraftableBoosterTypes };
 export const _resetCache = () => {
     memSetCache.clear();
     memSetList = null;
+    memSetListMeta = null;
     inFlightSetList = null;
     inFlightSet.clear();
 };
