@@ -44,6 +44,7 @@
                         :set-name="setName"
                         :booster-type="boosterType"
                         :ripping="stage === 'ripping'"
+                        :snapping="stage === 'snapping'"
                         :opened="false"
                         @click="onPackClick"
                     />
@@ -80,6 +81,7 @@
                     </div>
                 </div>
             </transition>
+            <div v-if="flashing" class="screen-flash" />
         </div>
     </div>
 </template>
@@ -90,18 +92,23 @@ import { useDraftStore } from "../stores/draft";
 import { useCardStore } from "../stores/cards";
 import PackArt from "./PackArt.vue";
 import DraftRevealCard from "./DraftRevealCard.vue";
-import { playRip, playCardReveal, playFlourish, setMuted, unlockAudio } from "../services/packAudio";
+import { playRip, playTear, playCardReveal, playFlourish, setMuted, unlockAudio } from "../services/packAudio";
 
 const draft = useDraftStore();
 const cards = useCardStore();
 
 // Stage progression for a single pack:
-//   "closed" → user clicks → "ripping" → "revealed" (cards visible) → user advances → next pack ("closed").
+//   "closed" → user clicks → "ripping" → "snapping" → "revealed" (cards visible) → user advances → next pack ("closed").
 const stage = ref("closed");
+// Separate from `stage` because the screen-flash animation (~550ms) outlasts
+// the snapping stage (~200ms tear duration) — we don't want the flash element
+// torn down mid-animation when cards reveal.
+const flashing = ref(false);
 const symbolFailed = ref(false);
 let revealTimer = null;
 let cardTickTimers = [];
 let flourishTimer = null;
+let flashTimer = null;
 
 const currentPack = computed(() => draft.currentPack);
 
@@ -114,31 +121,18 @@ const setName = computed(() => {
 const boosterType = computed(() => currentPack.value?.simResult?.boosterType || "draft");
 const tier = computed(() => currentPack.value?.simResult?.rarestTier || "common");
 
-// Which (if any) flourish tier to play. The pack-rip + per-card clicks fire on
-// every reveal; this only governs the end-of-reveal payoff sound.
-//
-// The rationale: Modern Play Boosters always roll a card in the rare-or-mythic
-// slot (e.g. SPM's rareMythicBoosterfun), so 1 rare is the floor and nothing
-// special. The actually exciting outcomes are:
-//   • bonus-sheet hit (Special Guest / sourceMaterial)
-//   • any mythic
-//   • TWO rares (the wildcard/foil slot rolled a second rare on top of the
-//     guaranteed rare slot — happens ~35% of the time on SPM)
-// Anything below that — single rare, all commons/uncommons — ends silently.
+// End-of-reveal flourish tier. Picks the rarest thing in the pack:
+//   bonus-sheet hit (Special Guest / sourceMaterial) → masterpiece
+//   any mythic                                       → mythic
+//   otherwise                                        → silent (no flourish)
 const flourishTier = computed(() => {
     const sim = currentPack.value?.simResult;
     if (!sim) return null;
-    if (sim.hasBonusSheet) return "bonus";
-
-    let mythics = 0;
-    let rares = 0;
+    if (sim.hasBonusSheet) return "masterpiece";
     for (const c of sim.cards || []) {
         if (c.isBonusSheet) continue;
-        if (c.rarity === "mythic") mythics++;
-        else if (c.rarity === "rare") rares++;
+        if (c.rarity === "mythic") return "mythic";
     }
-    if (mythics > 0) return "mythic";
-    if (rares >= 2) return "rare";
     return null;
 });
 
@@ -203,26 +197,37 @@ async function onPackClick() {
     if (stage.value !== "closed") return;
     await unlockAudio();
     stage.value = "ripping";
-    playRip();
+    // Chain: crinkle (rip) → snap (tear) → reveal cards. Fall back to a
+    // visual-only delay if audio is unavailable.
+    const ripMs = playRip();
+    // Small gap between crinkle and snap so the tear reads as a separate
+    // decisive moment instead of running continuously off the rip's tail.
+    const TEAR_GAP_MS = 50;
+    const tearStart = (ripMs > 0 ? ripMs : 460) + TEAR_GAP_MS;
     revealTimer = setTimeout(() => {
-        // Build resolved cards now (right when the pack visually pops open).
-        resolvedCards.value = draft.resolveCurrentPack();
-        stage.value = "revealed";
+        stage.value = "snapping";
+        flashing.value = true;
+        flashTimer = setTimeout(() => { flashing.value = false; }, 600);
+        const tearMs = playTear();
+        const revealAfter = tearMs > 0 ? tearMs : 200;
+        revealTimer = setTimeout(() => {
+            // Build resolved cards now (right when the pack visually pops open).
+            resolvedCards.value = draft.resolveCurrentPack();
+            stage.value = "revealed";
 
-        // Stagger the card-flip click sounds to match the visual flips.
-        cardTickTimers = resolvedCards.value.map((_, i) =>
-            setTimeout(() => playCardReveal(), 220 + i * 90)
-        );
+            // Stagger the card-flip click sounds to match the visual flips.
+            cardTickTimers = resolvedCards.value.map((_, i) =>
+                setTimeout(() => playCardReveal(), 220 + i * 90)
+            );
 
-        // Final flourish keyed to flourishTier (see computed above for the
-        // policy). null = silent; rare/mythic/bonus map to the matching
-        // playFlourish branch.
-        const fTier = flourishTier.value;
-        if (fTier) {
-            const flourishDelay = 220 + resolvedCards.value.length * 90 + 120;
-            flourishTimer = setTimeout(() => playFlourish(fTier), flourishDelay);
-        }
-    }, 460);
+            // Final flourish keyed to flourishTier (see computed above).
+            const fTier = flourishTier.value;
+            if (fTier) {
+                const flourishDelay = 220 + resolvedCards.value.length * 90 + 120;
+                flourishTimer = setTimeout(() => playFlourish(fTier), flourishDelay);
+            }
+        }, revealAfter);
+    }, tearStart);
 }
 
 function onAdvance() {
@@ -255,10 +260,13 @@ function toggleMute() {
 function clearAllTimers() {
     clearTimeout(revealTimer);
     clearTimeout(flourishTimer);
+    clearTimeout(flashTimer);
     for (const t of cardTickTimers) clearTimeout(t);
     cardTickTimers = [];
     revealTimer = null;
     flourishTimer = null;
+    flashTimer = null;
+    flashing.value = false;
 }
 
 onMounted(() => {
@@ -308,16 +316,20 @@ onUnmounted(() => {
 .pack-source {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    color: var(--text-muted, rgba(255, 255, 255, 0.7));
-    font-size: 13px;
+    gap: 10px;
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
 }
 
 .set-symbol {
-    width: 18px;
-    height: 18px;
+    width: 22px;
+    height: 22px;
     object-fit: contain;
-    filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.6));
+    /* Scryfall ships set symbols as black SVGs. On the dark theme they vanish,
+       so invert to white and add a faint glow for legibility. */
+    filter: invert(1) brightness(1.1) drop-shadow(0 0 2px rgba(0, 0, 0, 0.7));
 }
 
 .opener-stage {
@@ -334,6 +346,59 @@ onUnmounted(() => {
     flex-direction: column;
     align-items: center;
     gap: 16px;
+}
+
+/* Snap-moment screen blast. Two stacked layers via ::before/::after:
+     ::before — full-viewport white wash that punches in hard and fades
+     ::after  — expanding ring/burst radiating from the pack
+   Fixed-position so it covers the entire window, not just the stage. */
+.screen-flash {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.screen-flash::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center,
+        rgba(255, 255, 255, 1) 0%,
+        rgba(255, 245, 220, 0.9) 25%,
+        rgba(255, 230, 180, 0.4) 55%,
+        rgba(255, 200, 120, 0) 100%);
+    animation: screen-flash-wash 0.45s ease-out forwards;
+}
+
+.screen-flash::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 40vmin;
+    height: 40vmin;
+    margin-left: -20vmin;
+    margin-top: -20vmin;
+    border-radius: 50%;
+    background: radial-gradient(circle,
+        rgba(255, 255, 255, 0.9) 0%,
+        rgba(255, 240, 200, 0.5) 40%,
+        rgba(255, 200, 100, 0) 70%);
+    animation: screen-flash-burst 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes screen-flash-wash {
+    0%   { opacity: 0; }
+    8%   { opacity: 1; }
+    35%  { opacity: 0.7; }
+    100% { opacity: 0; }
+}
+
+@keyframes screen-flash-burst {
+    0%   { transform: scale(0.2); opacity: 0; }
+    15%  { transform: scale(0.6); opacity: 1; }
+    100% { transform: scale(6); opacity: 0; }
 }
 
 .pack-instruction {

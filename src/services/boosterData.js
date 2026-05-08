@@ -69,11 +69,18 @@ const SUPPLEMENTAL_TYPES = new Set([
 // almost always release within a couple weeks of their parent expansion.
 const SUPPLEMENTAL_WINDOW_DAYS = 21;
 
+// Persistent "host" sets that aggregate cards across many parent expansions
+// without ever declaring a parentCode and without releasing alongside any one
+// parent. SPG (Special Guests) is the canonical case: every modern set with a
+// `specialGuest` slot pulls UUIDs from SPG, so we always have to try it.
+const PERSISTENT_HOST_CODES = ["SPG"];
+
 // Find supplemental sets that may host cards referenced by `parentCode`'s
-// booster sheets. Two passes:
+// booster sheets. Three passes:
 //   1. Sets that explicitly declare `parentCode` — covers TLA → TLE etc.
 //   2. Same-release-window sets of bonus-host types (masterpiece, eternal…)
 //      — covers SPM → MAR, where the bonus-sheet host has no parentCode.
+//   3. Persistent host sets (SPG) — covers any expansion's `specialGuest` slot.
 // Direct children are returned first so they're tried first by the resolver.
 export async function findSupplementalSets(parentCode) {
     if (!parentCode) return [];
@@ -108,6 +115,16 @@ export async function findSupplementalSets(parentCode) {
                 out.push(s);
                 seen.add(code);
             }
+        }
+    }
+
+    for (const hostCode of PERSISTENT_HOST_CODES) {
+        const upperHost = hostCode.toUpperCase();
+        if (seen.has(upperHost)) continue;
+        const host = all.find((s) => s.code.toUpperCase() === upperHost);
+        if (host) {
+            out.push(host);
+            seen.add(upperHost);
         }
     }
 

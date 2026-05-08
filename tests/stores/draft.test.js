@@ -272,6 +272,56 @@ describe("useDraftStore - startDraft", () => {
         expect(bonus.rarity).toBe("mythic");
     });
 
+    it("pulls in SPG when a parent's specialGuest slot references it (no parentCode, far older release)", async () => {
+        // Mirrors the ECL → SPG case: SPG is a perpetual "Special Guests" host
+        // with no parentCode and a release date years before the parent set,
+        // so neither the parentCode pass nor the release-window pass catches
+        // it. Without an explicit fallback, every modern set's specialGuest
+        // slot would surface as "Unknown Card".
+        const parent = {
+            code: "ECL",
+            cards: [
+                { uuid: "ecl-1", name: "Eclipse Common", rarity: "common", colors: ["W"], identifiers: { scryfallId: "se1" } },
+            ],
+            booster: {
+                draft: {
+                    boosters: [{ weight: 1, contents: { common: 1, specialGuest: 1 } }],
+                    sheets: {
+                        common: { totalWeight: 1, cards: { "ecl-1": 1 } },
+                        specialGuest: { totalWeight: 1, cards: { "spg-1": 1 } },
+                    },
+                },
+            },
+        };
+        const spg = {
+            code: "SPG",
+            cards: [
+                { uuid: "spg-1", name: "Special Guest Card", rarity: "mythic", colors: ["U"], identifiers: { scryfallId: "sspg1" } },
+            ],
+            booster: {},
+        };
+        installFakeElectron(
+            [
+                { code: "ECL", name: "Lorwyn Eclipsed", type: "expansion", releaseDate: "2026-01-23", baseSetSize: 1 },
+                // No parentCode, released years earlier — must be reached via the persistent-host fallback.
+                { code: "SPG", name: "Special Guests", type: "masterpiece", releaseDate: "2023-11-17", baseSetSize: 1 },
+            ],
+            { ECL: parent, SPG: spg }
+        );
+
+        const cards = useCardStore();
+        cards.allCards = [];
+        const store = useDraftStore();
+        store.updateSelection(store.selections[0].id, { setCode: "ECL", count: 1 });
+        await store.startDraft();
+
+        expect(store.phase).toBe("opening");
+        const guest = store.packQueue[0].simResult.cards.find((c) => c.slot === "specialGuest");
+        expect(guest).toBeDefined();
+        expect(guest.name).toBe("Special Guest Card");
+        expect(guest.rarity).toBe("mythic");
+    });
+
     it("surfaces an error and stays in setup if a set lacks draftable booster data", async () => {
         installFakeElectron(
             [{ code: "BAD", name: "Bad", type: "expansion", releaseDate: "2024-01-01", baseSetSize: 1 }],
