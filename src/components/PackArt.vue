@@ -3,6 +3,7 @@
         class="pack-art"
         :class="{
             ripping: ripping,
+            snapping: snapping,
             opened: opened,
             'has-photo': !!packImageUrl,
             'photo-loading': photoLoading,
@@ -49,6 +50,7 @@ const props = defineProps({
     setName: { type: String, default: "" },
     boosterType: { type: String, default: "draft" },
     ripping: { type: Boolean, default: false },
+    snapping: { type: Boolean, default: false },
     opened: { type: Boolean, default: false },
 });
 
@@ -330,37 +332,49 @@ const typeLabel = computed(() => {
     z-index: 3;
 }
 
-/* Ripping animation: shake + flash + crack along the rip line. */
+/* Ripping: continuous rumble synced to the crinkle audio. Loops as long as
+   the .ripping class is applied (i.e. through the entire rip sample). */
 .pack-art.ripping {
-    animation: shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+    animation: rumble 0.18s linear infinite;
 }
 
-.pack-art.ripping .pack-flash {
-    animation: flash 0.55s ease-out forwards;
-}
-
-.pack-art.ripping .pack-rip-line {
-    animation: rip-line 0.45s ease-out forwards;
-}
-
-@keyframes shake {
+@keyframes rumble {
     0%, 100% { transform: translate(0, 0) rotate(0); }
-    15% { transform: translate(-4px, 1px) rotate(-1deg); }
-    30% { transform: translate(5px, -1px) rotate(1.2deg); }
-    45% { transform: translate(-3px, 2px) rotate(-0.8deg); }
-    60% { transform: translate(4px, 0) rotate(1deg); }
-    75% { transform: translate(-2px, -1px) rotate(-0.4deg); }
+    25% { transform: translate(-2px, 0.5px) rotate(-0.4deg); }
+    50% { transform: translate(2.5px, -0.7px) rotate(0.5deg); }
+    75% { transform: translate(-1.5px, 0.3px) rotate(-0.3deg); }
+}
+
+/* Snapping: sharp punch + flash + crack timed to the tear-snap audio. One
+   shot, ~250ms — the moment of impact. */
+.pack-art.snapping {
+    animation: snap-punch 0.28s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+
+.pack-art.snapping .pack-flash {
+    animation: flash 0.28s ease-out forwards;
+}
+
+.pack-art.snapping .pack-rip-line {
+    animation: rip-line 0.28s ease-out forwards;
+}
+
+@keyframes snap-punch {
+    0%   { transform: scale(1) rotate(0); filter: brightness(1); }
+    20%  { transform: scale(1.08) rotate(-1.5deg); filter: brightness(1.6); }
+    60%  { transform: scale(0.98) rotate(0.5deg); filter: brightness(1.1); }
+    100% { transform: scale(1) rotate(0); filter: brightness(1); }
 }
 
 @keyframes flash {
     0% { opacity: 0; }
-    25% { opacity: 1; }
+    20% { opacity: 1; }
     100% { opacity: 0; }
 }
 
 @keyframes rip-line {
     0% { transform: scaleY(1); opacity: 0.5; }
-    50% { transform: scaleY(8); opacity: 1; }
+    50% { transform: scaleY(10); opacity: 1; }
     100% { transform: scaleY(1); opacity: 0; }
 }
 
