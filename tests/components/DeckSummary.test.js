@@ -20,6 +20,9 @@ beforeEach(() => {
         configurable: true,
         value: { writeText: vi.fn().mockResolvedValue() },
     });
+    // happy-dom doesn't implement modal dialogs; stub them so vi.spyOn works (vitest 4 is strict)
+    window.confirm = () => true;
+    window.alert = () => {};
     exportDeckMock.mockClear();
 });
 
