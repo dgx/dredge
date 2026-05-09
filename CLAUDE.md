@@ -189,7 +189,10 @@ create symlinks. Distributable macOS builds should be produced on macOS (or a
 `macos-14` CI runner) for code signing.
 
 `npm run release` (or `release:patch`) bumps the version, tags, and pushes —
-GitHub Actions then builds and uploads installers to the release.
+GitHub Actions then builds and uploads installers to the release. The
+release script extracts the matching `## [<version>]` section from
+`CHANGELOG.md` and uses it as the GitHub release body, so make sure the
+CHANGELOG entry for the new version exists before running the script.
 
 ## Code Style
 
