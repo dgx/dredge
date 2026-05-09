@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] — 2026-05-09
+
+### Changed
+- Pack-opening reveal restructured around a single climactic beat. Cards
+  now flip in build-up order (lands → commons → uncommons → rares → mythic /
+  bonus-sheet last) instead of rarest-first. The mythic / masterpiece
+  flourish, the tier-colored ambient backdrop, and the particle burst all
+  fire together at the moment the headline card flips, so audio and visual
+  peaks coincide. The climax card flips slightly slower with a one-shot
+  on-card flash for emphasis. Common-only packs flip uniformly with no
+  climax treatment.
+- Lowered the masterpiece flourish volume so it no longer overshoots the
+  mythic flourish.
+
+### Fixed
+- Reveal-order classification of nonbasic lands drawn from non-land slots
+  (e.g. FIN's Capital City from `uncommon`, Ishgard from `wildcard`). The
+  resolver now consults MTGJSON's top-level `types` as the authoritative
+  land signal so these flip first instead of slotting into the rarity
+  buildup.
+
 ## [0.5.0] — 2026-05-08
 
 ### Added
