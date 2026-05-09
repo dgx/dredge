@@ -3,19 +3,19 @@ import { ref, computed } from "vue";
 import { useCardStore } from "./cards.js";
 import {
     fetchSetData,
-    listDraftableSets,
+    listOpenableSets,
     findSupplementalSets,
 } from "../services/boosterData.js";
 import {
     pickBoosterType,
-    listDraftableBoosterTypes,
-    hasDraftableBooster,
+    listOpenableBoosterTypes,
+    hasOpenableBooster,
     buildCardIndex,
     mergeCardsIntoIndex,
     collectMissingSheetUuids,
     rollPack,
 } from "../services/boosterSimulator.js";
-import { buildScryfallIndex, resolvePack } from "../services/draftResolver.js";
+import { buildScryfallIndex, resolvePack } from "../services/packResolver.js";
 import { prewarmPackImages } from "../services/packImage.js";
 
 const DEFAULT_PACKS_PER_SET = 6;
@@ -25,7 +25,7 @@ function nextSelectionId() {
     return `sel-${selectionCounter++}`;
 }
 
-export const useDraftStore = defineStore("draft", () => {
+export const usePackStore = defineStore("packs", () => {
     // Phases:
     //   "setup"    – picking sets / pack counts
     //   "loading"  – fetching MTGJSON, rolling packs
@@ -50,7 +50,7 @@ export const useDraftStore = defineStore("draft", () => {
         { id: nextSelectionId(), setCode: "", count: DEFAULT_PACKS_PER_SET, boosterType: "" },
     ]);
 
-    // Rolled packs for the current draft session.
+    // Rolled packs for the current pack-opening session.
     const packQueue = ref([]); // [{ setCode, packIndex, total, simResult, resolved (lazy) }]
     const currentPackIndex = ref(0);
 
@@ -72,8 +72,8 @@ export const useDraftStore = defineStore("draft", () => {
             if (!s.setCode || (Number(s.count) || 0) <= 0) return false;
             const data = loadedSetData.value.get(s.setCode);
             // Pre-load not required to be valid in setup view; only required
-            // at startDraft time. Treat as valid if it has a setCode + count.
-            return !data || hasDraftableBooster(data);
+            // at startOpening time. Treat as valid if it has a setCode + count.
+            return !data || hasOpenableBooster(data);
         })
     );
 
@@ -98,7 +98,7 @@ export const useDraftStore = defineStore("draft", () => {
         setOptionsLoading.value = true;
         setOptionsError.value = null;
         try {
-            const list = await listDraftableSets();
+            const list = await listOpenableSets();
             setOptions.value = list;
             setOptionsLoaded.value = true;
         } catch (err) {
@@ -193,10 +193,10 @@ export const useDraftStore = defineStore("draft", () => {
     function boosterTypesFor(setCode) {
         const data = loadedSetData.value.get(setCode);
         if (!data?.booster) return [];
-        return listDraftableBoosterTypes(data.booster);
+        return listOpenableBoosterTypes(data.booster);
     }
 
-    async function startDraft() {
+    async function startOpening() {
         if (!canStart.value) return;
         phase.value = "loading";
         error.value = null;
@@ -210,13 +210,13 @@ export const useDraftStore = defineStore("draft", () => {
             )];
             await Promise.all(uniqueSetCodes.map((c) => ensureSetData(c)));
 
-            // Validate every selection has draftable booster data.
+            // Validate every selection has openable booster data.
             for (const sel of selections.value) {
                 if (!sel.setCode || (Number(sel.count) || 0) <= 0) continue;
                 const data = loadedSetData.value.get(sel.setCode);
-                if (!data || !hasDraftableBooster(data)) {
+                if (!data || !hasOpenableBooster(data)) {
                     throw new Error(
-                        `${sel.setCode} doesn't have draftable booster data in MTGJSON.`
+                        `${sel.setCode} doesn't have openable booster data in MTGJSON.`
                     );
                 }
             }
@@ -287,7 +287,7 @@ export const useDraftStore = defineStore("draft", () => {
         if (!pack) return;
         const resolved = resolveCurrentPack();
         const cards = useCardStore();
-        cards.appendDraftedCards(resolved);
+        cards.appendOpenedCards(resolved);
         currentPackIndex.value += 1;
         if (currentPackIndex.value >= packQueue.value.length) {
             phase.value = "finished";
@@ -295,16 +295,16 @@ export const useDraftStore = defineStore("draft", () => {
     }
 
     // Skip remaining packs and finalize whatever's been kept so far.
-    function finishDraft() {
+    function finishOpening() {
         phase.value = "finished";
     }
 
     function exitToDeckBuilder() {
-        // The cards store already holds the pool. Just close the draft view.
+        // The cards store already holds the pool. Just close the pack-opening view.
         const cards = useCardStore();
         cards.setSealedMode(true);
-        cards.closeImport();
-        phase.value = "setup"; // ready for a new draft if user comes back
+        cards.closePacks();
+        phase.value = "setup"; // ready for another session if user comes back
     }
 
     function reset() {
@@ -343,10 +343,10 @@ export const useDraftStore = defineStore("draft", () => {
         removeSelection,
         updateSelection,
         boosterTypesFor,
-        startDraft,
+        startOpening,
         resolveCurrentPack,
         commitCurrentPack,
-        finishDraft,
+        finishOpening,
         exitToDeckBuilder,
         reset,
     };

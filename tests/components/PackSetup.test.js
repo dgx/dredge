@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import DraftSetup from "../../src/components/DraftSetup.vue";
-import { useDraftStore } from "../../src/stores/draft.js";
+import PackSetup from "../../src/components/PackSetup.vue";
+import { usePackStore } from "../../src/stores/packs.js";
 import { useCardStore } from "../../src/stores/cards.js";
 import { _resetCache } from "../../src/services/boosterData.js";
 import { mountWithVuetify } from "../helpers/mount.js";
@@ -34,9 +34,9 @@ beforeEach(() => {
     };
 });
 
-describe("DraftSetup", () => {
+describe("PackSetup", () => {
     it("disables the Open button until a selection is valid", async () => {
-        const w = mountWithVuetify(DraftSetup);
+        const w = mountWithVuetify(PackSetup);
         await w.vm.$nextTick();
         const openBtn = w.findAll("button").find((b) => /Open\s+\d+\s+pack/i.test(b.text()));
         expect(openBtn).toBeDefined();
@@ -44,45 +44,45 @@ describe("DraftSetup", () => {
     });
 
     it("loads set options on mount", async () => {
-        const w = mountWithVuetify(DraftSetup);
+        const w = mountWithVuetify(PackSetup);
         // Wait for the async load to settle.
         await new Promise((r) => setTimeout(r, 10));
         await w.vm.$nextTick();
-        const draft = useDraftStore();
-        expect(draft.setOptionsLoaded).toBe(true);
-        expect(draft.setOptions.length).toBe(2);
+        const packs = usePackStore();
+        expect(packs.setOptionsLoaded).toBe(true);
+        expect(packs.setOptions.length).toBe(2);
     });
 
     it("Add another set button stays visible regardless of how many slots are added", async () => {
-        const w = mountWithVuetify(DraftSetup);
-        const draft = useDraftStore();
-        draft.addSelection();
-        draft.addSelection();
-        draft.addSelection();
-        draft.addSelection();
+        const w = mountWithVuetify(PackSetup);
+        const packs = usePackStore();
+        packs.addSelection();
+        packs.addSelection();
+        packs.addSelection();
+        packs.addSelection();
         await w.vm.$nextTick();
         const addBtn = w.findAll("button").find((b) => b.text().includes("Add another set"));
         expect(addBtn).toBeDefined();
     });
 
-    it("Browse all cards button calls cards.closeImport + setSealedMode(false)", async () => {
-        const w = mountWithVuetify(DraftSetup);
+    it("Browse all cards button calls cards.closePacks + setSealedMode(false)", async () => {
+        const w = mountWithVuetify(PackSetup);
         const cards = useCardStore();
         const setSealed = vi.spyOn(cards, "setSealedMode");
-        const close = vi.spyOn(cards, "closeImport");
+        const close = vi.spyOn(cards, "closePacks");
         const btn = w.findAll("button").find((b) => b.text().includes("Browse all"));
         await btn.trigger("click");
         expect(setSealed).toHaveBeenCalledWith(false);
         expect(close).toHaveBeenCalled();
     });
 
-    it("Sound toggle flips draft.muted", async () => {
-        const w = mountWithVuetify(DraftSetup);
-        const draft = useDraftStore();
-        expect(draft.muted).toBe(false);
+    it("Sound toggle flips packs.muted", async () => {
+        const w = mountWithVuetify(PackSetup);
+        const packs = usePackStore();
+        expect(packs.muted).toBe(false);
         const btn = w.findAll("button").find((b) => /Sound:/.test(b.text()));
         await btn.trigger("click");
-        expect(draft.muted).toBe(true);
+        expect(packs.muted).toBe(true);
     });
 
     it("shows error alert when set options fail to load", async () => {
@@ -91,7 +91,7 @@ describe("DraftSetup", () => {
                 throw new Error("offline");
             },
         };
-        const w = mountWithVuetify(DraftSetup);
+        const w = mountWithVuetify(PackSetup);
         await new Promise((r) => setTimeout(r, 10));
         await w.vm.$nextTick();
         expect(w.text()).toContain("offline");

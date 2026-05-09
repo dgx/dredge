@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { setActivePinia, createPinia } from "pinia";
-import { useDraftStore } from "../../src/stores/draft.js";
+import { usePackStore } from "../../src/stores/packs.js";
 import { useCardStore } from "../../src/stores/cards.js";
 import { _resetCache } from "../../src/services/boosterData.js";
-import { _resetPoolCounter } from "../../src/services/draftResolver.js";
+import { _resetPoolCounter } from "../../src/services/packResolver.js";
 
 // Minimal MTGJSON-shaped fixture for set MOCK with one common card.
 function makeSetData(code) {
@@ -69,22 +69,22 @@ beforeEach(() => {
     delete globalThis.window.electronAPI;
 });
 
-describe("useDraftStore - selections", () => {
+describe("usePackStore - selections", () => {
     it("starts with one empty selection", () => {
-        const store = useDraftStore();
+        const store = usePackStore();
         expect(store.selections).toHaveLength(1);
         expect(store.selections[0].setCode).toBe("");
     });
 
     it("can add as many selections as the user wants (no upper cap)", () => {
-        const store = useDraftStore();
+        const store = usePackStore();
         for (let i = 0; i < 6; i++) store.addSelection();
         expect(store.selections).toHaveLength(7);
         expect(store.canAddSelection).toBe(true);
     });
 
     it("can remove selections but never to zero", () => {
-        const store = useDraftStore();
+        const store = usePackStore();
         store.addSelection();
         const id = store.selections[0].id;
         store.removeSelection(id);
@@ -94,7 +94,7 @@ describe("useDraftStore - selections", () => {
     });
 
     it("updates selection fields immutably", () => {
-        const store = useDraftStore();
+        const store = usePackStore();
         const id = store.selections[0].id;
         store.updateSelection(id, { setCode: "ABC", count: 9 });
         expect(store.selections[0].setCode).toBe("ABC");
@@ -102,7 +102,7 @@ describe("useDraftStore - selections", () => {
     });
 
     it("totalPacks sums selection counts", () => {
-        const store = useDraftStore();
+        const store = usePackStore();
         store.updateSelection(store.selections[0].id, { setCode: "A", count: 6 });
         store.addSelection();
         store.updateSelection(store.selections[1].id, { setCode: "B", count: 3 });
@@ -110,7 +110,7 @@ describe("useDraftStore - selections", () => {
     });
 
     it("canStart only when at least one selection has setCode + count > 0", () => {
-        const store = useDraftStore();
+        const store = usePackStore();
         expect(store.canStart).toBe(false);
         store.updateSelection(store.selections[0].id, { setCode: "A", count: 0 });
         expect(store.canStart).toBe(false);
@@ -119,7 +119,7 @@ describe("useDraftStore - selections", () => {
     });
 });
 
-describe("useDraftStore - loading set options", () => {
+describe("usePackStore - loading set options", () => {
     it("filters online-only and empty sets and sorts newest first", async () => {
         installFakeElectron(
             [
@@ -131,7 +131,7 @@ describe("useDraftStore - loading set options", () => {
             ],
             {}
         );
-        const store = useDraftStore();
+        const store = usePackStore();
         await store.loadSetOptions();
         expect(store.setOptionsLoaded).toBe(true);
         const codes = store.setOptions.map((s) => s.code);
@@ -145,13 +145,13 @@ describe("useDraftStore - loading set options", () => {
                 throw new Error("offline");
             },
         };
-        const store = useDraftStore();
+        const store = usePackStore();
         await store.loadSetOptions();
         expect(store.setOptionsError).toBe("offline");
     });
 });
 
-describe("useDraftStore - startDraft", () => {
+describe("usePackStore - startOpening", () => {
     it("rolls all packs and transitions phase to opening", async () => {
         installFakeElectron(
             [{ code: "MOCK", name: "Mock Set", type: "expansion", releaseDate: "2024-01-01", baseSetSize: 2 }],
@@ -161,9 +161,9 @@ describe("useDraftStore - startDraft", () => {
         const cards = useCardStore();
         cards.allCards = []; // Empty local DB → resolver will synthesize.
 
-        const store = useDraftStore();
+        const store = usePackStore();
         store.updateSelection(store.selections[0].id, { setCode: "MOCK", count: 4 });
-        await store.startDraft();
+        await store.startOpening();
 
         expect(store.phase).toBe("opening");
         expect(store.packQueue).toHaveLength(4);
@@ -211,9 +211,9 @@ describe("useDraftStore - startDraft", () => {
 
         const cards = useCardStore();
         cards.allCards = [];
-        const store = useDraftStore();
+        const store = usePackStore();
         store.updateSelection(store.selections[0].id, { setCode: "PAR", count: 1 });
-        await store.startDraft();
+        await store.startOpening();
 
         expect(store.phase).toBe("opening");
         const pack = store.packQueue[0];
@@ -261,9 +261,9 @@ describe("useDraftStore - startDraft", () => {
 
         const cards = useCardStore();
         cards.allCards = [];
-        const store = useDraftStore();
+        const store = usePackStore();
         store.updateSelection(store.selections[0].id, { setCode: "EXP", count: 1 });
-        await store.startDraft();
+        await store.startOpening();
 
         expect(store.phase).toBe("opening");
         const bonus = store.packQueue[0].simResult.cards.find((c) => c.slot === "bonusSheet");
@@ -311,9 +311,9 @@ describe("useDraftStore - startDraft", () => {
 
         const cards = useCardStore();
         cards.allCards = [];
-        const store = useDraftStore();
+        const store = usePackStore();
         store.updateSelection(store.selections[0].id, { setCode: "ECL", count: 1 });
-        await store.startDraft();
+        await store.startOpening();
 
         expect(store.phase).toBe("opening");
         const guest = store.packQueue[0].simResult.cards.find((c) => c.slot === "specialGuest");
@@ -322,20 +322,20 @@ describe("useDraftStore - startDraft", () => {
         expect(guest.rarity).toBe("mythic");
     });
 
-    it("surfaces an error and stays in setup if a set lacks draftable booster data", async () => {
+    it("surfaces an error and stays in setup if a set lacks openable booster data", async () => {
         installFakeElectron(
             [{ code: "BAD", name: "Bad", type: "expansion", releaseDate: "2024-01-01", baseSetSize: 1 }],
             { BAD: makeNoBoosterSet("BAD") }
         );
-        const store = useDraftStore();
+        const store = usePackStore();
         store.updateSelection(store.selections[0].id, { setCode: "BAD", count: 1 });
-        await store.startDraft();
+        await store.startOpening();
         expect(store.phase).toBe("setup");
-        expect(store.error).toMatch(/draftable booster data/);
+        expect(store.error).toMatch(/openable booster data/);
     });
 });
 
-describe("useDraftStore - opening packs", () => {
+describe("usePackStore - opening packs", () => {
     it("commits pack to pool and advances; finishes after last pack", async () => {
         installFakeElectron(
             [{ code: "MOCK", name: "Mock", type: "expansion", releaseDate: "2024-01-01", baseSetSize: 2 }],
@@ -344,9 +344,9 @@ describe("useDraftStore - opening packs", () => {
         const cards = useCardStore();
         cards.allCards = [];
 
-        const store = useDraftStore();
+        const store = usePackStore();
         store.updateSelection(store.selections[0].id, { setCode: "MOCK", count: 2 });
-        await store.startDraft();
+        await store.startOpening();
 
         expect(cards.sealedPool).toHaveLength(0);
 
@@ -357,7 +357,7 @@ describe("useDraftStore - opening packs", () => {
         expect(store.currentPackIndex).toBe(1);
         expect(store.phase).toBe("opening");
 
-        // Open pack 2 — finishes the draft.
+        // Open pack 2 — finishes the session.
         store.commitCurrentPack();
         expect(cards.sealedPool).toHaveLength(4);
         expect(store.phase).toBe("finished");
@@ -370,15 +370,15 @@ describe("useDraftStore - opening packs", () => {
         );
         const cards = useCardStore();
         cards.allCards = [];
-        const store = useDraftStore();
+        const store = usePackStore();
         store.updateSelection(store.selections[0].id, { setCode: "MOCK", count: 1 });
-        await store.startDraft();
+        await store.startOpening();
         const resolved = store.resolveCurrentPack();
         expect(resolved).toHaveLength(2);
         for (const entry of resolved) {
             expect(entry.uuid).toMatch(/^scry-MOCK-\d$/);
             expect(entry.poolId).toBeDefined();
-            expect(entry.draftMeta.fromSet).toBe("MOCK");
+            expect(entry.packMeta.fromSet).toBe("MOCK");
         }
     });
 });

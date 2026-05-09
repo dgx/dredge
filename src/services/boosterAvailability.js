@@ -88,7 +88,7 @@ async function pMapLimit(items, limit, fn) {
 // Walk the entire SetList and tag any set whose MTGJSON data has no booster
 // types. Cheap on warm runs (every fetchSetData call is disk-cached); expensive
 // on the very first run (~257 fetches) but useful work since it primes the
-// cache for any future drafts of those sets.
+// cache for any future pack-opening of those sets.
 //
 // Idempotent: if a scan against the current SetList version has already
 // completed, returns immediately. Concurrent callers share the same promise.

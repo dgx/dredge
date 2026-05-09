@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2] — 2026-05-09
+
 ### Changed
 - Card data now comes from MTGJSON's `AllPrintings.json` instead of a
   previously-required external XML data file. Dredge is now fully
@@ -14,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   caches a transformed slim database under `{userData}/cardCache/`;
   subsequent launches use the cache and only re-fetch when MTGJSON publishes
   a new version.
+- Open Packs is now the sole entry point to the sealed-deck workflow and got
+  the same gold display title styling that the import page had. Internal
+  modules, store, and CSS have been renamed away from "draft" terminology
+  since the format is sealed deck, not draft.
 
 ### Added
 - Branded full-screen welcome overlay shown during the first-launch card-data
@@ -21,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - Legacy XML card-database reader and `fast-xml-parser` dependency.
+- Standalone Import Sealed Pool page, the titlebar "Re-import" /
+  "Build Sealed Deck" button, and the "Import sealed pool instead" link in
+  Open Packs. Import-from-Clipboard remains available on the Open Packs
+  screen.
 
 ## [0.5.1] — 2026-05-09
 

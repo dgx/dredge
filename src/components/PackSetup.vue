@@ -1,29 +1,29 @@
 <template>
-    <div class="draft-setup">
-        <v-card class="draft-setup-box" variant="flat" color="transparent">
-            <h2>Open Packs</h2>
-            <p class="draft-setup-hint">
+    <div class="pack-setup">
+        <v-card class="pack-setup-box" variant="flat" color="transparent">
+            <h2 class="pack-setup-title">Open Packs</h2>
+            <p class="pack-setup-hint">
                 Pick sets and how many packs to crack.
             </p>
 
             <v-alert
-                v-if="draft.setOptionsError"
+                v-if="packs.setOptionsError"
                 type="error"
                 variant="tonal"
                 density="compact"
                 class="mb-3"
             >
-                Couldn't load set list: {{ draft.setOptionsError }}
+                Couldn't load set list: {{ packs.setOptionsError }}
             </v-alert>
 
-            <div v-if="draft.setOptionsLoading" class="loading-row">
+            <div v-if="packs.setOptionsLoading" class="loading-row">
                 <v-progress-circular indeterminate size="20" width="2" />
                 <span>Loading set list…</span>
             </div>
 
             <div class="selection-rows">
                 <div
-                    v-for="(sel, idx) in draft.selections"
+                    v-for="(sel, idx) in packs.selections"
                     :key="sel.id"
                     class="selection-row"
                 >
@@ -99,7 +99,7 @@
 
                     <v-text-field
                         :model-value="sel.count"
-                        @update:model-value="(v) => draft.updateSelection(sel.id, { count: clampCount(v) })"
+                        @update:model-value="(v) => packs.updateSelection(sel.id, { count: clampCount(v) })"
                         type="number"
                         label="Packs"
                         min="1"
@@ -113,7 +113,7 @@
                     <v-select
                         v-if="boosterTypeChoices(sel).length > 1"
                         :model-value="sel.boosterType"
-                        @update:model-value="(v) => draft.updateSelection(sel.id, { boosterType: v })"
+                        @update:model-value="(v) => packs.updateSelection(sel.id, { boosterType: v })"
                         :items="boosterTypeChoices(sel)"
                         label="Pack type"
                         density="compact"
@@ -126,18 +126,18 @@
                         icon="mdi-close"
                         variant="text"
                         size="small"
-                        :disabled="draft.selections.length <= 1"
-                        @click="draft.removeSelection(sel.id)"
+                        :disabled="packs.selections.length <= 1"
+                        @click="packs.removeSelection(sel.id)"
                     />
 
                     <div v-if="rowError(sel)" class="row-error">{{ rowError(sel) }}</div>
                 </div>
             </div>
 
-            <div class="draft-setup-actions">
+            <div class="pack-setup-actions">
                 <v-btn
-                    v-if="draft.canAddSelection"
-                    @click="draft.addSelection"
+                    v-if="packs.canAddSelection"
+                    @click="packs.addSelection"
                     prepend-icon="mdi-plus"
                     variant="text"
                 >
@@ -148,46 +148,43 @@
 
                 <v-btn
                     @click="toggleMute"
-                    :prepend-icon="draft.muted ? 'mdi-volume-off' : 'mdi-volume-high'"
+                    :prepend-icon="packs.muted ? 'mdi-volume-off' : 'mdi-volume-high'"
                     variant="text"
                     size="small"
                 >
-                    Sound: {{ draft.muted ? "Off" : "On" }}
+                    Sound: {{ packs.muted ? "Off" : "On" }}
                 </v-btn>
 
                 <v-btn
                     color="primary"
                     variant="flat"
                     @click="onStart"
-                    :disabled="!draft.canStart"
-                    :loading="draft.phase === 'loading'"
+                    :disabled="!packs.canStart"
+                    :loading="packs.phase === 'loading'"
                     prepend-icon="mdi-package-variant-closed"
                 >
-                    Open {{ draft.totalPacks }} pack<span v-if="draft.totalPacks !== 1">s</span>
+                    Open {{ packs.totalPacks }} pack<span v-if="packs.totalPacks !== 1">s</span>
                 </v-btn>
             </div>
 
             <v-alert
-                v-if="draft.error"
+                v-if="packs.error"
                 type="error"
                 variant="tonal"
                 class="mt-3"
             >
-                {{ draft.error }}
+                {{ packs.error }}
             </v-alert>
 
             <v-divider class="my-4" />
 
-            <div class="draft-setup-secondary">
+            <div class="pack-setup-secondary">
                 <v-btn
                     size="small"
                     prepend-icon="mdi-clipboard-text-outline"
                     @click="importFromClipboard"
                 >
                     Import from Clipboard
-                </v-btn>
-                <v-btn size="small" @click="goImport">
-                    Import sealed pool instead
                 </v-btn>
                 <v-btn
                     v-if="cards.sealedPool.length > 0"
@@ -216,7 +213,7 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from "vue";
-import { useDraftStore } from "../stores/draft";
+import { usePackStore } from "../stores/packs";
 import { useCardStore } from "../stores/cards";
 import { setMuted, unlockAudio } from "../services/packAudio";
 import {
@@ -226,16 +223,16 @@ import {
     markNoBooster,
 } from "../services/boosterAvailability";
 
-const draft = useDraftStore();
+const packs = usePackStore();
 const cards = useCardStore();
 const clipboardError = ref("");
 
 onMounted(() => {
-    setMuted(draft.muted);
+    setMuted(packs.muted);
     // Kick both off in parallel — they share the SetList in-flight promise.
     // The autocomplete is gated on `picksLocked` so the user can't interact
     // with a partially-known list.
-    draft.loadSetOptions();
+    packs.loadSetOptions();
     scanAvailability();
 });
 
@@ -244,17 +241,17 @@ onMounted(() => {
 // Either condition could change membership, and we don't want entries to
 // appear or disappear while the user is browsing.
 const picksLocked = computed(
-    () => draft.setOptionsLoading || availabilityScanning.value
+    () => packs.setOptionsLoading || availabilityScanning.value
 );
 
 watch(
-    () => draft.muted,
+    () => packs.muted,
     (m) => setMuted(m)
 );
 
 const setItems = computed(() => {
     const hidden = noBoosterSets.value;
-    return draft.setOptions
+    return packs.setOptions
         .filter((s) => !hidden.has(String(s.code).toUpperCase()))
         .map((s) => {
             const year = s.releaseDate ? s.releaseDate.slice(0, 4) : "";
@@ -302,7 +299,7 @@ function clampCount(v) {
 
 function boosterTypeChoices(sel) {
     if (!sel.setCode) return [];
-    const types = draft.boosterTypesFor(sel.setCode);
+    const types = packs.boosterTypesFor(sel.setCode);
     return types.map((t) => ({ title: prettyTypeName(t), value: t }));
 }
 
@@ -314,30 +311,30 @@ function prettyTypeName(t) {
 
 function rowError(sel) {
     if (!sel.setCode) return null;
-    const err = draft.setLoadErrors.get(sel.setCode);
+    const err = packs.setLoadErrors.get(sel.setCode);
     if (err) return `Failed to load: ${err}`;
     return null;
 }
 
 async function onSetChange(id, code) {
-    draft.updateSelection(id, { setCode: code, boosterType: "" });
+    packs.updateSelection(id, { setCode: code, boosterType: "" });
     if (!code) return;
     try {
-        const data = await draft.ensureSetData(code);
+        const data = await packs.ensureSetData(code);
         const rawTypes = data?.booster ? Object.keys(data.booster) : [];
         if (rawTypes.length === 0) {
             // Brand-new set the background scan hasn't reached yet, or
             // MTGJSON simply has no boosters for it. Hide it from the
             // dropdown for good and silently clear the slot.
             markNoBooster(code);
-            draft.updateSelection(id, { setCode: "", boosterType: "" });
+            packs.updateSelection(id, { setCode: "", boosterType: "" });
             return;
         }
         // Pre-pick a default booster type so the dropdown reflects what
         // we'll roll if the user doesn't change it.
-        const types = draft.boosterTypesFor(code);
+        const types = packs.boosterTypesFor(code);
         if (types.length > 0) {
-            draft.updateSelection(id, { boosterType: types[0] });
+            packs.updateSelection(id, { boosterType: types[0] });
         }
     } catch {
         // Network/load error — leave the selection so rowError can surface it.
@@ -347,25 +344,21 @@ async function onSetChange(id, code) {
 async function onStart() {
     // First user gesture — unlock the audio context.
     await unlockAudio();
-    await draft.startDraft();
+    await packs.startOpening();
 }
 
 function toggleMute() {
-    draft.muted = !draft.muted;
+    packs.muted = !packs.muted;
 }
 
 function backToPool() {
     cards.setSealedMode(true);
-    cards.closeImport();
-}
-
-function goImport() {
-    cards.openImport();
+    cards.closePacks();
 }
 
 function browseAll() {
     cards.setSealedMode(false);
-    cards.closeImport();
+    cards.closePacks();
 }
 
 async function importFromClipboard() {
@@ -387,12 +380,12 @@ async function importFromClipboard() {
         return;
     }
     // Clipboard import succeeded — leave the pack-opener and land on the pool.
-    cards.closeDraft();
+    cards.closePacks();
 }
 </script>
 
 <style scoped>
-.draft-setup {
+.pack-setup {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -402,12 +395,20 @@ async function importFromClipboard() {
     min-height: 0;
 }
 
-.draft-setup-box {
+.pack-setup-box {
     width: 100%;
     max-width: 760px;
 }
 
-.draft-setup-hint {
+.pack-setup-title {
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: #e8c668;
+}
+
+.pack-setup-hint {
     color: var(--text-muted, rgba(255, 255, 255, 0.7));
     margin: 6px 0 18px;
 }
@@ -516,14 +517,14 @@ async function importFromClipboard() {
     gap: 8px;
 }
 
-.draft-setup-actions {
+.pack-setup-actions {
     display: flex;
     align-items: center;
     gap: 8px;
     margin-top: 18px;
 }
 
-.draft-setup-secondary {
+.pack-setup-secondary {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;

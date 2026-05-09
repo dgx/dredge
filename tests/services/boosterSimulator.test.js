@@ -1,10 +1,10 @@
 import { describe, it, expect } from "vitest";
 import {
     pickBoosterType,
-    listDraftableBoosterTypes,
+    listOpenableBoosterTypes,
     isSkippedBoosterType,
     isBonusSheetSlot,
-    hasDraftableBooster,
+    hasOpenableBooster,
     buildCardIndex,
     mergeCardsIntoIndex,
     collectMissingSheetUuids,
@@ -140,30 +140,30 @@ describe("pickBoosterType", () => {
     });
 });
 
-describe("listDraftableBoosterTypes", () => {
+describe("listOpenableBoosterTypes", () => {
     it("orders by preference; collector now passes through, prerelease still skipped", () => {
         const root = { collector: {}, play: {}, draft: {}, prerelease: {} };
-        expect(listDraftableBoosterTypes(root)).toEqual(["draft", "play", "collector"]);
+        expect(listOpenableBoosterTypes(root)).toEqual(["draft", "play", "collector"]);
     });
 });
 
-describe("hasDraftableBooster", () => {
+describe("hasOpenableBooster", () => {
     it("true when set has a usable booster type", () => {
         const { booster, cards } = makeFixtureSet();
-        expect(hasDraftableBooster({ booster, cards })).toBe(true);
+        expect(hasOpenableBooster({ booster, cards })).toBe(true);
     });
 
     it("true when only collector is present (collector is allowed)", () => {
-        expect(hasDraftableBooster({ booster: { collector: {} } })).toBe(true);
+        expect(hasOpenableBooster({ booster: { collector: {} } })).toBe(true);
     });
 
     it("false when only prerelease is present", () => {
-        expect(hasDraftableBooster({ booster: { prerelease: {} } })).toBe(false);
+        expect(hasOpenableBooster({ booster: { prerelease: {} } })).toBe(false);
     });
 
     it("false when booster object is empty or missing", () => {
-        expect(hasDraftableBooster({ booster: {} })).toBe(false);
-        expect(hasDraftableBooster({})).toBe(false);
+        expect(hasOpenableBooster({ booster: {} })).toBe(false);
+        expect(hasOpenableBooster({})).toBe(false);
     });
 });
 
@@ -299,7 +299,7 @@ describe("collectMissingSheetUuids", () => {
         expect(collectMissingSheetUuids(booster, idx).size).toBe(0);
     });
 
-    it("ignores non-draftable booster types when walking sheets", () => {
+    it("ignores non-openable booster types when walking sheets", () => {
         // A prerelease-only booster references absent-uuid, but prerelease is
         // skipped — the walker should not flag the missing uuid.
         const booster = {

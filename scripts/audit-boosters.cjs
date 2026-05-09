@@ -1,4 +1,4 @@
-// One-off audit: fetch every draftable set's MTGJSON file, summarize what
+// One-off audit: fetch every openable set's MTGJSON file, summarize what
 // booster types each set defines, and flag what the current SKIP_PATTERNS
 // would exclude. Reuses the live app's disk cache at %APPDATA%/dredge/boosterCache.
 
@@ -13,7 +13,7 @@ const CACHE_DIR = path.join(
     "boosterCache"
 );
 
-const DRAFTABLE_SET_TYPES = new Set([
+const OPENABLE_SET_TYPES = new Set([
     "expansion",
     "core",
     "masters",
@@ -97,12 +97,12 @@ async function pMapLimit(items, limit, fn) {
 (async () => {
     const setList = await loadSetList();
     const all = (setList.data || [])
-        .filter((s) => DRAFTABLE_SET_TYPES.has(s.type))
+        .filter((s) => OPENABLE_SET_TYPES.has(s.type))
         .filter((s) => !s.isOnlineOnly)
         .filter((s) => (s.baseSetSize || 0) > 0)
         .sort((a, b) => (b.releaseDate || "").localeCompare(a.releaseDate || ""));
 
-    console.error(`[audit] ${all.length} draftable sets to inspect`);
+    console.error(`[audit] ${all.length} openable sets to inspect`);
 
     let done = 0;
     const results = await pMapLimit(all, 8, async (s) => {
@@ -150,7 +150,7 @@ async function pMapLimit(items, limit, fn) {
             totalSets: results.length,
             setsWithNoBoosterAtAll: noBooster.length,
             setsExcludedBySkipPatternsOnly: onlySkipped.length,
-            setsWithDraftableTypesUnderCurrentRules: okTypes.length,
+            setsWithOpenableTypesUnderCurrentRules: okTypes.length,
         },
         boosterTypeFrequency: Object.fromEntries(
             [...allBoosterTypeCounts.entries()].sort((a, b) => b[1] - a[1])

@@ -2,7 +2,7 @@
 // to /api/mtgjson/* paths served by the Vite dev middleware in browser mode.
 // Disk-cached in Electron under {userData}/boosterCache/.
 
-import { hasDraftableBooster, listDraftableBoosterTypes } from "./boosterSimulator.js";
+import { hasOpenableBooster, listOpenableBoosterTypes } from "./boosterSimulator.js";
 
 const memSetCache = new Map();
 let memSetList = null;
@@ -10,9 +10,11 @@ let memSetListMeta = null;
 let inFlightSetList = null;
 const inFlightSet = new Map();
 
-// Set types that we'll surface as "draftable" — match what a player would
-// reasonably want to draft from. Excludes promo, memorabilia, etc.
-const DRAFTABLE_SET_TYPES = new Set([
+// Set types that we'll surface as "openable" — match what a player would
+// reasonably want to crack packs from. Excludes promo, memorabilia, etc.
+// Note: "draft_innovation" is the literal MTGJSON set-type string and stays
+// as-is regardless of internal vocabulary.
+const OPENABLE_SET_TYPES = new Set([
     "expansion",
     "core",
     "masters",
@@ -131,17 +133,17 @@ export async function findSupplementalSets(parentCode) {
     return out;
 }
 
-// Returns the set list filtered to "interesting for drafting": draftable type
-// and not online-only-test-set garbage. Sorted newest first.
+// Returns the set list filtered to "interesting to open": openable type and
+// not online-only-test-set garbage. Sorted newest first.
 //
 // Note: the SetList file does NOT include a per-set boosters list. We can only
 // confirm a set has booster data after we fetch its full JSON. So this list is
 // a best-effort filter; the UI should still gracefully handle a chosen set
 // turning out to lack booster data after fetch.
-export async function listDraftableSets() {
+export async function listOpenableSets() {
     const all = await fetchSetList();
     return all
-        .filter((s) => DRAFTABLE_SET_TYPES.has(s.type))
+        .filter((s) => OPENABLE_SET_TYPES.has(s.type))
         .filter((s) => !s.isOnlineOnly)
         .filter((s) => (s.baseSetSize || 0) > 0)
         .sort((a, b) => (b.releaseDate || "").localeCompare(a.releaseDate || ""));
@@ -179,7 +181,7 @@ export function getSetListMeta() {
 }
 
 // Re-export so callers can avoid importing from two modules.
-export { hasDraftableBooster, listDraftableBoosterTypes };
+export { hasOpenableBooster, listOpenableBoosterTypes };
 
 // For tests
 export const _resetCache = () => {

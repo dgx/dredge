@@ -28,8 +28,8 @@ body {
 /* Frameless Electron titlebar.
    Right padding reserves space for the Windows caption-control strip
    (min/max/close), which overlays the right ~152px of the titlebar in
-   frameless mode. Without this, action buttons (Draft, Build Sealed Deck)
-   slide under the close button on Windows. */
+   frameless mode. Without this, action buttons (Open Packs) slide under
+   the close button on Windows. */
 .app-titlebar {
     position: relative;
     display: flex;
@@ -516,81 +516,6 @@ body {
 .card-grid-container::-webkit-scrollbar-thumb,
 .deck-builder-main::-webkit-scrollbar-thumb {
     border-radius: 7px;
-}
-
-/* Sealed Import */
-.sealed-import {
-    flex: 1;
-    overflow-y: auto;
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    padding: 40px 20px;
-}
-
-.sealed-import-box {
-    width: 100%;
-    max-width: 680px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.sealed-import-box h2 {
-    font-family: var(--font-display);
-    font-size: 24px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    color: #e8c668;
-}
-
-.sealed-import-hint {
-    opacity: 0.72;
-    font-size: 13px;
-}
-
-.sealed-import-hint code {
-    background: rgba(255, 255, 255, 0.06);
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-size: 12px;
-}
-
-.import-textarea :deep(textarea) {
-    font-family: "Consolas", "Monaco", "Courier New", monospace;
-    font-size: 13px;
-    line-height: 1.5;
-}
-
-.sealed-import-actions {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.sealed-import-secondary {
-    display: flex;
-    gap: 8px;
-}
-
-.import-error-list {
-    list-style: none;
-    padding: 0;
-    margin-top: 6px;
-    max-height: 200px;
-    overflow-y: auto;
-}
-
-.import-error-list li {
-    font-family: "Consolas", "Monaco", "Courier New", monospace;
-    font-size: 12px;
-    padding: 2px 0;
-}
-
-.err-reason {
-    color: rgb(var(--v-theme-error));
-    font-weight: 600;
-    margin-right: 6px;
 }
 
 /* Deck Builder layout */
