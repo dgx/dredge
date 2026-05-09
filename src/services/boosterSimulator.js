@@ -284,6 +284,10 @@ export function rollPack(boosterRoot, type, cardIndex, rng = Math.random) {
                 number: card?.number || "",
                 rarity,
                 colors: card?.colors || [],
+                // Propagated so the reveal-order sort can detect nonbasic
+                // lands (and tokens) coming from non-land slots — e.g. a
+                // Land from FIN's `uncommon`/`wildcard`/`rareMythic` slot.
+                types: Array.isArray(card?.types) ? card.types : [],
                 isFoil,
                 isBonusSheet: isBonus,
                 slot: slotName,

@@ -140,7 +140,7 @@ describe("resolvePack", () => {
         expect(entries[1].poolFoil).toBe(true);
     });
 
-    it("sorts reveal order: bonus → mythic → rare → uncommon → common → lands", () => {
+    it("sorts reveal order: lands → common → uncommon → rare → mythic → bonus (climax last)", () => {
         const idx = buildScryfallIndex([]); // synthesize all
         const pack = {
             cards: [
@@ -154,18 +154,47 @@ describe("resolvePack", () => {
         };
         const entries = resolvePack(pack, "ZZZ", idx);
         expect(entries.map((e) => e.uuid)).toEqual([
-            "s-bonus",
-            "s-mythic",
-            "s-rare",
-            "s-uncommon",
-            "s-common",
             "s-land",
+            "s-common",
+            "s-uncommon",
+            "s-rare",
+            "s-mythic",
+            "s-bonus",
         ]);
+    });
+
+    it("recognizes lands by MTGJSON types even when the card isn't in the local DB", () => {
+        // Reproduces the FIN bug: nonbasic lands drawn from `uncommon` /
+        // `wildcard` / `rareMythic` slots used to fall through to the rarity
+        // bucket because synthesized cards have an empty `type` field. The
+        // simulator now propagates MTGJSON `types` and the resolver uses it
+        // as the authoritative land signal.
+        const idx = buildScryfallIndex([]); // synthesize all
+        const pack = {
+            cards: [
+                { scryfallId: "s-rare-spell", name: "Some Rare Spell", rarity: "rare", colors: [], slot: "rareMythic", types: ["Sorcery"] },
+                { scryfallId: "s-capital", name: "Capital City", rarity: "uncommon", colors: [], slot: "uncommon", types: ["Land"] },
+                { scryfallId: "s-island", name: "Island", rarity: "common", colors: [], slot: "nonFoilLand", types: ["Land"] },
+                { scryfallId: "s-ishgard", name: "Ishgard, the Holy See // Faith & Grief", rarity: "rare", colors: [], slot: "wildcard", types: ["Land", "Sorcery"] },
+                { scryfallId: "s-uncommon", name: "Some Uncommon", rarity: "uncommon", colors: [], slot: "uncommon", types: ["Creature"] },
+                { scryfallId: "s-common", name: "Some Common", rarity: "common", colors: [], slot: "common", types: ["Instant"] },
+            ],
+        };
+        const entries = resolvePack(pack, "FIN", idx);
+        // All three lands flip first (priority 10), then common, uncommon, rare.
+        const order = entries.map((e) => e.uuid);
+        // Lands grouped at the front (any internal order is fine, simulator order preserved).
+        expect(order.slice(0, 3).sort()).toEqual(
+            ["s-capital", "s-ishgard", "s-island"].sort()
+        );
+        expect(order[3]).toBe("s-common");
+        expect(order[4]).toBe("s-uncommon");
+        expect(order[5]).toBe("s-rare-spell"); // climax (only true non-land rare)
     });
 
     it("recognizes lands by card.type when slot doesn't tag them", () => {
         // A card whose slot is just "common" but whose type says Land — still
-        // pushed to the back.
+        // flips first as throwaway.
         const localCards = [
             {
                 name: "Evolving Wilds",
@@ -183,12 +212,12 @@ describe("resolvePack", () => {
         const idx = buildScryfallIndex(localCards);
         const pack = {
             cards: [
-                { scryfallId: "s-evolving", name: "Evolving Wilds", number: "1", rarity: "common", colors: [], slot: "common" },
                 { scryfallId: "s-other", name: "Spell", rarity: "common", colors: [], slot: "common" },
+                { scryfallId: "s-evolving", name: "Evolving Wilds", number: "1", rarity: "common", colors: [], slot: "common" },
             ],
         };
         const entries = resolvePack(pack, "ZZZ", idx);
-        expect(entries[0].uuid).toBe("s-other");
-        expect(entries[1].uuid).toBe("s-evolving");
+        expect(entries[0].uuid).toBe("s-evolving");
+        expect(entries[1].uuid).toBe("s-other");
     });
 });

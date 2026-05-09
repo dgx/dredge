@@ -1,7 +1,12 @@
 <template>
     <div
         class="reveal-card"
-        :class="{ flipped, foil: card.poolFoil, bonus: card.draftMeta?.isBonusSheet }"
+        :class="{
+            flipped,
+            climax,
+            foil: card.poolFoil,
+            bonus: card.draftMeta?.isBonusSheet,
+        }"
         :data-rarity="card.rarity"
         :style="{ animationDelay: delay + 'ms' }"
         @click="$emit('click')"
@@ -18,6 +23,7 @@
                 </div>
                 <div class="card-overlay-foil" v-if="card.poolFoil" />
                 <div class="card-overlay-rainbow" v-if="card.draftMeta?.isBonusSheet" />
+                <div v-if="climax" class="climax-flash" />
             </div>
         </div>
     </div>
@@ -29,24 +35,20 @@ import { loadCardImage, getCachedSync } from "../services/imageLoader";
 
 const props = defineProps({
     card: { type: Object, required: true },
+    // Entrance-stagger delay only (CSS animation-delay on the slide-in).
+    // Flip timing is parent-driven via the `flipped` prop.
     delay: { type: Number, default: 0 },
+    flipped: { type: Boolean, default: false },
+    climax: { type: Boolean, default: false },
 });
 
 defineEmits(["click"]);
 
-const flipped = ref(false);
 const imageSrc = ref(getCachedSync(props.card));
 
 let abortController = null;
-let flipTimer = null;
 
 onMounted(async () => {
-    // Schedule the flip on the same staggered timeline as the CSS slide-in.
-    // Total reveal duration = base 250ms entrance + per-card delay.
-    flipTimer = setTimeout(() => {
-        flipped.value = true;
-    }, props.delay + 220);
-
     if (!imageSrc.value) {
         abortController = new AbortController();
         const result = await loadCardImage(props.card, abortController.signal);
@@ -55,7 +57,6 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-    clearTimeout(flipTimer);
     abortController?.abort();
 });
 </script>
@@ -89,8 +90,37 @@ onUnmounted(() => {
     transition: transform 0.55s cubic-bezier(0.34, 1.4, 0.64, 1);
 }
 
+/* Climax card flips slower for dramatic weight. */
+.reveal-card.climax .reveal-card-inner {
+    transition: transform 0.75s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
 .reveal-card.flipped .reveal-card-inner {
     transform: rotateY(180deg);
+}
+
+/* One-shot bright burst on the climax card the moment its flip completes. */
+.climax-flash {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    background: radial-gradient(circle at center,
+        rgba(255, 255, 255, 0.85) 0%,
+        rgba(255, 245, 220, 0.55) 30%,
+        rgba(255, 220, 160, 0) 70%);
+    mix-blend-mode: screen;
+    z-index: 4;
+}
+
+.reveal-card.climax.flipped .climax-flash {
+    animation: climax-flash 0.7s ease-out 0.45s forwards;
+}
+
+@keyframes climax-flash {
+    0%   { opacity: 0; transform: scale(0.6); }
+    20%  { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1.6); }
 }
 
 .reveal-card-back,
