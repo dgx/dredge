@@ -1,0 +1,17 @@
+# Normalize all text files to LF in the repo and working tree.
+# This prevents CRLF noise when switching between Windows and WSL/macOS.
+* text=auto eol=lf
+
+# Explicit binary declarations — never touch line endings in these.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.wav  binary
+*.mp3  binary
+*.woff  binary
+*.woff2 binary
+*.ttf  binary
+*.eot  binary
+*.otf  binary
