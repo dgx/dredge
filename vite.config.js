@@ -4,10 +4,17 @@ import vuetify from "vite-plugin-vuetify";
 import fs from "fs";
 import os from "os";
 import path from "path";
+import zlib from "zlib";
+import { Readable, Writable } from "stream";
+import { pipeline } from "stream/promises";
+import { createRequire } from "module";
+import chain from "stream-chain";
+import { parser } from "stream-json/parser.js";
+import { pick } from "stream-json/filters/pick.js";
+import { streamObject } from "stream-json/streamers/stream-object.js";
 
-const cardDbPath = process.platform === "darwin"
-    ? path.join(os.homedir(), "Library", "Application Support", "Cockatrice", "Cockatrice", "cards.xml")
-    : path.join(process.env.LOCALAPPDATA || "", "Cockatrice", "Cockatrice", "cards.xml");
+const require = createRequire(import.meta.url);
+const { createSlimBuilder } = require("./electron/cardDbTransform.cjs");
 
 export default defineConfig({
     plugins: [
@@ -16,14 +23,90 @@ export default defineConfig({
         {
             name: "serve-card-database",
             configureServer(server) {
-                server.middlewares.use("/api/cards.xml", (req, res) => {
-                    if (!fs.existsSync(cardDbPath)) {
-                        res.statusCode = 404;
-                        res.end("Card database not found at " + cardDbPath);
-                        return;
+                // Cache the transformed slim database next to the booster cache.
+                // Browser dev mode is for development; we still version-check on
+                // each launch so a stale cache doesn't surprise contributors.
+                const cacheDir = path.join(os.tmpdir(), "dredge-card-cache");
+                fs.mkdirSync(cacheDir, { recursive: true });
+                const slimPath = path.join(cacheDir, "cards-db.json");
+                const metaPath = path.join(cacheDir, "meta.json");
+
+                let inFlight = null;
+
+                async function buildSlim() {
+                    let upstreamVersion = "";
+                    try {
+                        const r = await fetch("https://mtgjson.com/api/v5/Meta.json", {
+                            headers: { "User-Agent": "Dredge/0.1" },
+                        });
+                        if (r.ok) {
+                            const j = await r.json();
+                            upstreamVersion = j?.data?.version || "";
+                        }
+                    } catch {
+                        // offline — fall through to cache check below
                     }
-                    res.setHeader("Content-Type", "application/xml");
-                    fs.createReadStream(cardDbPath).pipe(res);
+
+                    if (fs.existsSync(slimPath) && fs.existsSync(metaPath)) {
+                        try {
+                            const cached = JSON.parse(fs.readFileSync(metaPath, "utf-8"));
+                            if (!upstreamVersion || cached.version === upstreamVersion) {
+                                return fs.readFileSync(slimPath, "utf-8");
+                            }
+                        } catch {
+                            // bad cache — fall through to refetch
+                        }
+                    }
+
+                    if (!upstreamVersion && !fs.existsSync(slimPath)) {
+                        throw new Error("Offline and no cached card database");
+                    }
+
+                    const res = await fetch("https://mtgjson.com/api/v5/AllPrintings.json.gz", {
+                        headers: { "User-Agent": "Dredge/0.1" },
+                    });
+                    if (!res.ok || !res.body) {
+                        throw new Error(`AllPrintings fetch failed: ${res.status}`);
+                    }
+
+                    const builder = createSlimBuilder();
+                    const sink = new Writable({
+                        objectMode: true,
+                        write({ key, value }, _enc, cb) {
+                            try { builder.addSet(key, value); cb(); }
+                            catch (err) { cb(err); }
+                        },
+                    });
+
+                    const tokenizer = chain([
+                        parser(),
+                        pick({ filter: "data" }),
+                        streamObject(),
+                    ]);
+
+                    await pipeline(
+                        Readable.fromWeb(res.body),
+                        zlib.createGunzip(),
+                        tokenizer,
+                        sink
+                    );
+
+                    const slim = builder.finalize();
+                    const text = JSON.stringify(slim);
+                    fs.writeFileSync(slimPath, text);
+                    fs.writeFileSync(metaPath, JSON.stringify({ version: upstreamVersion }));
+                    return text;
+                }
+
+                server.middlewares.use("/api/carddb.json", (_req, res) => {
+                    if (!inFlight) inFlight = buildSlim().finally(() => { inFlight = null; });
+                    inFlight.then((text) => {
+                        res.setHeader("Content-Type", "application/json");
+                        res.end(text);
+                    }).catch((err) => {
+                        res.statusCode = 502;
+                        res.end("Card database error: " + err.message);
+                    });
                 });
             },
         },

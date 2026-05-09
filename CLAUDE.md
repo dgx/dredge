@@ -3,10 +3,10 @@
 ## Project Overview
 
 Dredge is a Magic: The Gathering pack-opening, sealed-deck and card-browsing
-app built with Electron + Vue 3 + Vuetify. It reads Cockatrice's `cards.xml`
-for the local card pool and uses MTGJSON booster data to simulate opening
-packs. Card images come from Scryfall; pack box art comes from TCGPlayer's
-product image CDN.
+app built with Electron + Vue 3 + Vuetify. It downloads MTGJSON's
+`AllPrintings.json` on first launch (cached locally) for the card pool, and
+uses the same MTGJSON booster data to simulate opening packs. Card images
+come from Scryfall; pack box art comes from TCGPlayer's product image CDN.
 
 ## Tech Stack
 
@@ -15,9 +15,8 @@ product image CDN.
 - **Vuetify 4** — UI components (lean on Vuetify props/slots first)
 - **Pinia** — state management (`cards`, `draft` stores)
 - **Vue Router** — installed but currently unused
-- **Vite** — build tooling, with dev-server middleware that proxies the local
-  Cockatrice DB and MTGJSON data so browser dev mode works without Electron
-- **fast-xml-parser** — Cockatrice card-database XML
+- **Vite** — build tooling, with dev-server middleware that fetches and
+  transforms MTGJSON data so browser dev mode works without Electron
 - **mana-font** + `@mdi/font` — mana symbols and Material Design icons
 - **Vitest** + `@vue/test-utils` + `happy-dom` — unit / component tests
 
@@ -25,8 +24,11 @@ product image CDN.
 
 ```
 electron/
-  main.js          # Window, IPC: card DB read, image cache, MTGJSON fetch+cache
+  main.js          # Window, IPC: card DB load (AllPrintings.json + version-checked
+                   # cache + progress events), image cache, MTGJSON fetch+cache
   preload.js       # contextBridge → window.electronAPI
+  cardDbTransform.cjs  # Pure transform: AllPrintings → slim {sets, cards}.
+                   # Shared by main.js, vite middleware, and tests.
 
 src/
   main.js          # Entry: installs browserFallback, registers Pinia + Vuetify
@@ -41,9 +43,8 @@ src/
     draft.js       # Pack-opening flow: setup → loading → opening → finished;
                    # set selections, packQueue, currentPackIndex, audio mute
   services/
-    cardDatabase.js     # Parses Cockatrice v4 XML (cockatrice_carddatabase root)
     cardGrouping.js     # type/color/cmc/rarity grouping primitives
-    sealedParser.js     # Parses Cockatrice / MTGA / bare deck-list lines
+    sealedParser.js     # Parses bracketed [SET:num] / MTGA / bare deck-list lines
     deckExporter.js     # Exports the current deck back to a list format
     imageLoader.js      # Scryfall image fetch w/ rate limiting, queue, abort,
                         # 3-tier cache (memory → disk → network)
@@ -57,7 +58,7 @@ src/
                         # (autoplay-unlock on first user gesture)
     manaSymbols.js      # Cost-string → mana-font icon parsing
     browserFallback.js  # Shims electronAPI in browser dev mode (Vite middleware
-                        # serves /api/cards.xml and /api/mtgjson/*.json)
+                        # serves /api/carddb.json and /api/mtgjson/*.json)
   components/
     SearchBar.vue       # Text search, color/type/rarity filters, sort, grouping
     CardGrid.vue        # Virtual-scrolled flat grid (handles 30k+ cards)
@@ -76,6 +77,8 @@ src/
     DraftPackOpener.vue # Pack-by-pack reveal UI
     DraftRevealCard.vue # Single-card reveal animation inside the pack opener
     PackArt.vue         # Real TCGPlayer art if resolved, else CSS fake-pack
+    WelcomeOverlay.vue  # Full-screen first-launch overlay shown while the
+                        # card database downloads (logo + progress + retry)
   styles/
     main.css            # Dark-theme tokens, frameless titlebar styling
   assets/
@@ -99,14 +102,31 @@ Two Pinia stores — `cards` (browser, filters, deck, sealed pool) and `draft`
 
 ## Card Database
 
-Cockatrice's `cards.xml` (v4, `cockatrice_carddatabase` root) read from:
-- **Windows**: `%LOCALAPPDATA%\Cockatrice\Cockatrice\cards.xml`
-- **macOS**: `~/Library/Application Support/Cockatrice/Cockatrice/cards.xml`
+The card pool is sourced from MTGJSON's `AllPrintings.json.gz`. On first
+launch the Electron main process pipes the response directly through
+`zlib.createGunzip()` and `stream-json` (`pick("data") → streamObject()`)
+into an incremental builder (`createSlimBuilder` in
+`electron/cardDbTransform.cjs`). Streaming is required because the
+uncompressed file (~400+ MB) exceeds V8's max string length, so we never
+materialize the full JSON; sets are consumed one at a time. The builder
+collapses printings into a deduped-by-name `{sets, cards}` shape and the
+slim result is written to disk and returned via the `cardDb:load` IPC
+channel. Progress is reported through `cardDb:progress` events with phases
+`checking → downloading → parsing → writing → done`.
 
-Browser dev mode fetches the same file via Vite middleware at `/api/cards.xml`.
-Parsing uses `processEntities: true`, `htmlEntities: true`, and a high
-`maxTotalExpansions` (100000) because the 53MB XML exceeds defaults. Tokens
-are filtered out during parsing.
+Cache locations:
+- **Windows**: `%APPDATA%\Dredge\cardCache\{cards-db.json, meta.json}`
+- **macOS**: `~/Library/Application Support/Dredge/cardCache/{cards-db.json, meta.json}`
+- **Browser dev**: `os.tmpdir()/dredge-card-cache/`
+
+Cache invalidation: every launch fetches the tiny `Meta.json` from MTGJSON
+and compares `data.version` against the cached `meta.json`. If they match,
+the slim cache is reused. If `Meta.json` is unreachable but a cache exists,
+Dredge falls back to the cache (offline-tolerant after first launch). If
+both fail, the welcome overlay shows an error with a retry button.
+
+Browser dev mode hits the same flow through Vite middleware at
+`/api/carddb.json`.
 
 ## Image Loading (Scryfall)
 
@@ -191,7 +211,10 @@ and add an entry under `## [Unreleased]` in `CHANGELOG.md`. Move entries from
 
 ## Key Design Decisions
 
-- Read-only access to Cockatrice's card database (no writes)
+- Card data is sourced from MTGJSON; the app is fully standalone.
+- Heavy parsing (the multi-hundred-MB AllPrintings JSON) happens in the
+  Electron main process so the renderer only ever JSON.parses the slim
+  cache.
 - Pack opening is the launch view — sealed-deck format is the primary workflow
 - Virtual scrolling for browse mode (30k+ cards)
 - Browser fallback + Vite middleware lets dev / tests run without Electron

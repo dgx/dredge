@@ -1,4 +1,4 @@
-// Parse Cockatrice / Scryfall-style mana cost strings into tokens.
+// Parse Scryfall-style mana cost strings into tokens.
 // Handles raw form "2WW", bracketed hybrids "{U/B}", and split cards "G // 2W".
 
 export function parseCost(str) {

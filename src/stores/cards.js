@@ -1,6 +1,5 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
-import { parseCardDatabase } from "../services/cardDatabase";
 import { parseSealedPool } from "../services/sealedParser";
 import { groupCards, isLand, typeKey, TYPE_ORDER } from "../services/cardGrouping";
 
@@ -281,10 +280,9 @@ export const useCardStore = defineStore("cards", () => {
         return buckets;
     });
 
-    async function parseDatabase(xmlString) {
-        const { sets: parsedSets, cards } = parseCardDatabase(xmlString);
-        sets.value = parsedSets;
-        allCards.value = cards;
+    function loadDatabase(slim) {
+        sets.value = slim?.sets || {};
+        allCards.value = Array.isArray(slim?.cards) ? slim.cards : [];
         loaded.value = true;
     }
 
@@ -565,7 +563,7 @@ export const useCardStore = defineStore("cards", () => {
         deckCountByName,
         BASIC_COLORS,
         BASIC_LAND_NAMES,
-        parseDatabase,
+        loadDatabase,
         selectCard,
         clearSelection,
         resetFilters,

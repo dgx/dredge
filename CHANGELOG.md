@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Card data now comes from MTGJSON's `AllPrintings.json` instead of a
+  previously-required external XML data file. Dredge is now fully
+  standalone. First launch streams a gzipped download from mtgjson.com and
+  caches a transformed slim database under `{userData}/cardCache/`;
+  subsequent launches use the cache and only re-fetch when MTGJSON publishes
+  a new version.
+
+### Added
+- Branded full-screen welcome overlay shown during the first-launch card-data
+  download, with explanation and live progress indicator.
+
+### Removed
+- Legacy XML card-database reader and `fast-xml-parser` dependency.
+
 ## [0.5.1] — 2026-05-09
 
 ### Changed
@@ -33,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Pack-opening overhaul with real TCGPlayer box-art and sample-based audio
   (rip / tear / flip / mythic / masterpiece) routed through a master gain.
-- Sealed-deck import (Cockatrice / MTGA / bare formats) and deck-building
+- Sealed-deck import (bracketed `[SET:num]` / MTGA / bare formats) and deck-building
   workspace for both sealed pools and all-cards mode.
 - MTGJSON-backed booster simulator: pick sets and pack counts, roll packs
   against MTGJSON sheet weights, resolve uuids back to the local pool.
@@ -77,6 +92,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0]
 
 ### Added
-- Initial release: Cockatrice `cards.xml` browser with Scryfall image fetching,
+- Initial release: card browser sourced from a local XML data file with Scryfall image fetching,
   three-tier image cache (memory → disk → network), virtual-scrolled grid,
   text / color / type filters, sorting, and card-detail modal.

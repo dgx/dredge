@@ -9,7 +9,7 @@ describe("parseSealedPool", () => {
         expect(r.basicLands).toEqual({ W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 });
     });
 
-    it("parses Cockatrice format", () => {
+    it("parses bracketed format", () => {
         const r = parseSealedPool("1 Lightning Bolt [LEA:161]");
         expect(r.entries).toEqual([
             {
@@ -23,7 +23,7 @@ describe("parseSealedPool", () => {
         ]);
     });
 
-    it("parses Cockatrice format with foil tag", () => {
+    it("parses bracketed format with foil tag", () => {
         const r = parseSealedPool("2 Lightning Bolt [LEA:161] [foil]");
         expect(r.entries[0].count).toBe(2);
         expect(r.entries[0].foil).toBe(true);
@@ -88,7 +88,7 @@ describe("parseSealedPool", () => {
     });
 
     it("does not match BARE_RE on lines containing brackets or parens", () => {
-        // A malformed Cockatrice/MTGA-ish line should error, not silently fall through.
+        // A malformed bracketed/MTGA-ish line should error, not silently fall through.
         const r = parseSealedPool("1 Strange Card [BAD");
         expect(r.errors).toContain("1 Strange Card [BAD");
     });

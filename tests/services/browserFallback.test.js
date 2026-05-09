@@ -27,30 +27,65 @@ describe("installBrowserFallback", () => {
         const { installBrowserFallback } = await loadFresh();
         installBrowserFallback();
         const api = globalThis.window.electronAPI;
-        expect(typeof api.readCardDatabase).toBe("function");
+        expect(typeof api.loadCardDatabase).toBe("function");
+        expect(typeof api.onCardDbProgress).toBe("function");
         expect(typeof api.getCachedImage).toBe("function");
         expect(typeof api.downloadImage).toBe("function");
         expect(typeof api.getCachePath).toBe("function");
     });
 
-    it("readCardDatabase fetches /api/cards.xml and returns text", async () => {
+    it("loadCardDatabase fetches /api/carddb.json and returns the parsed slim db", async () => {
+        const slim = { sets: { LEA: { code: "LEA" } }, cards: [{ name: "Bolt" }] };
         const fetchMock = vi.fn().mockResolvedValue({
             ok: true,
-            text: async () => "<xml/>",
+            json: async () => slim,
         });
         vi.stubGlobal("fetch", fetchMock);
         const { installBrowserFallback } = await loadFresh();
         installBrowserFallback();
-        const text = await globalThis.window.electronAPI.readCardDatabase();
-        expect(fetchMock).toHaveBeenCalledWith("/api/cards.xml");
-        expect(text).toBe("<xml/>");
+        const result = await globalThis.window.electronAPI.loadCardDatabase();
+        expect(fetchMock).toHaveBeenCalledWith("/api/carddb.json");
+        expect(result).toEqual(slim);
     });
 
-    it("readCardDatabase throws when the response is not ok", async () => {
+    it("loadCardDatabase throws when the response is not ok", async () => {
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 404 }));
         const { installBrowserFallback } = await loadFresh();
         installBrowserFallback();
-        await expect(globalThis.window.electronAPI.readCardDatabase()).rejects.toThrow(/404/);
+        await expect(globalThis.window.electronAPI.loadCardDatabase()).rejects.toThrow(/404/);
+    });
+
+    it("onCardDbProgress receives phase events during loadCardDatabase", async () => {
+        vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({ sets: {}, cards: [] }),
+        }));
+        const { installBrowserFallback } = await loadFresh();
+        installBrowserFallback();
+        const api = globalThis.window.electronAPI;
+        const events = [];
+        const off = api.onCardDbProgress((p) => events.push(p));
+        await api.loadCardDatabase();
+        off();
+        const phases = events.map((e) => e.phase);
+        expect(phases).toContain("checking");
+        expect(phases).toContain("downloading");
+        expect(phases).toContain("done");
+    });
+
+    it("onCardDbProgress unsubscribe stops further notifications", async () => {
+        vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({ sets: {}, cards: [] }),
+        }));
+        const { installBrowserFallback } = await loadFresh();
+        installBrowserFallback();
+        const api = globalThis.window.electronAPI;
+        const events = [];
+        const off = api.onCardDbProgress((p) => events.push(p));
+        off();
+        await api.loadCardDatabase();
+        expect(events).toEqual([]);
     });
 
     it("getCachedImage returns null on miss and the cached value on hit", async () => {
@@ -68,7 +103,6 @@ describe("installBrowserFallback", () => {
         const api = globalThis.window.electronAPI;
         const r1 = await api.downloadImage("http://x/img.jpg", "LEA", "Bolt.jpg");
         expect(r1).toBe("http://x/img.jpg");
-        // A second call returns the original cached URL even if a different one is passed
         const r2 = await api.downloadImage("http://different", "LEA", "Bolt.jpg");
         expect(r2).toBe("http://x/img.jpg");
     });

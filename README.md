@@ -2,24 +2,24 @@
   <img src="assets/logo.svg" alt="Dredge" width="520" />
 </p>
 
-<p align="center"><em>A Magic: The Gathering card browser.</em></p>
+<p align="center"><em>A Magic: The Gathering pack opener and sealed-deck workshop.</em></p>
 
 ---
 
-Dredge reads Cockatrice's card database XML and displays cards with images fetched from Scryfall. Desktop-first (Electron), with a browser dev mode for fast iteration.
+Dredge opens packs, builds sealed decks, and browses every printable Magic card. Card data comes from MTGJSON; card images come from Scryfall. Desktop-first (Electron), with a browser dev mode for fast iteration.
 
 ## Stack
 
-Electron · Vue 3 (Composition API) · Pinia · Vuetify · Vite · fast-xml-parser
+Electron · Vue 3 (Composition API) · Pinia · Vuetify · Vite
 
 ## Card Database
 
-Dredge reads Cockatrice's `cards.xml` (v4) from its standard location:
+On first launch Dredge downloads MTGJSON's `AllPrintings.json.gz` (~80 MB compressed) and transforms it into a slim local cache:
 
-- **Windows**: `%LOCALAPPDATA%\Cockatrice\Cockatrice\cards.xml`
-- **macOS**: `~/Library/Application Support/Cockatrice/Cockatrice/cards.xml`
+- **Windows**: `%APPDATA%\Dredge\cardCache\cards-db.json`
+- **macOS**: `~/Library/Application Support/Dredge/cardCache/cards-db.json`
 
-Card images are fetched from Scryfall and cached locally.
+Subsequent launches re-use the cache; Dredge only re-downloads when MTGJSON publishes a new version (checked via `Meta.json` on each launch). Card images are fetched from Scryfall and cached locally.
 
 ## Development
 
