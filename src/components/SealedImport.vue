@@ -3,7 +3,7 @@
         <v-card class="sealed-import-box" variant="flat" color="transparent">
             <h2>Import Sealed Pool</h2>
             <p class="sealed-import-hint">
-                Paste a Cockatrice-format card list below. Each line:
+                Paste a card list below. Each line:
                 <code>count Card Name [SET:number]</code>
             </p>
 

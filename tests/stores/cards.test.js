@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { setActivePinia, createPinia } from "pinia";
 import { useCardStore } from "../../src/stores/cards.js";
-import { SAMPLE_XML } from "../fixtures/sampleDatabase.js";
+import { buildSlimDatabase } from "../../electron/cardDbTransform.cjs";
+import { SAMPLE_ALL_PRINTINGS } from "../fixtures/sampleDatabase.js";
 
 function makeCard(overrides = {}) {
     return {
@@ -29,13 +30,21 @@ beforeEach(() => {
     setActivePinia(createPinia());
 });
 
-describe("useCardStore - parseDatabase", () => {
-    it("loads sets and cards from XML", async () => {
+describe("useCardStore - loadDatabase", () => {
+    it("loads sets and cards from a slim database object", () => {
         const store = useCardStore();
-        await store.parseDatabase(SAMPLE_XML);
+        store.loadDatabase(buildSlimDatabase(SAMPLE_ALL_PRINTINGS));
         expect(store.loaded).toBe(true);
         expect(store.allCards.length).toBeGreaterThan(0);
         expect(Object.keys(store.sets).length).toBeGreaterThan(0);
+    });
+
+    it("tolerates undefined / partial input", () => {
+        const store = useCardStore();
+        store.loadDatabase(undefined);
+        expect(store.allCards).toEqual([]);
+        expect(store.sets).toEqual({});
+        expect(store.loaded).toBe(true);
     });
 });
 
@@ -268,7 +277,7 @@ describe("useCardStore - sealed pool import", () => {
         ];
     });
 
-    it("populates pool from a Cockatrice-formatted import", () => {
+    it("populates pool from a bracketed-format import", () => {
         store.importSealedPool("3 Lightning Bolt [LEA:161]\n10 Forest");
         expect(store.sealedMode).toBe(true);
         expect(store.sealedPool.length).toBe(3);

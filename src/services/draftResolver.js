@@ -1,8 +1,8 @@
 // Resolves drafted pack cards (MTGJSON shape) into pool entries that the
 // existing sealed-pool / deck-builder code can consume unchanged. The image
-// loader keys off Scryfall IDs which both Cockatrice and MTGJSON use, so the
+// loader keys off Scryfall IDs (which MTGJSON exposes per printing), so the
 // actual lookup is straightforward when the card is in the local DB; we
-// synthesize a minimal stand-in when it isn't (e.g. user's Cockatrice DB is
+// synthesize a minimal stand-in when it isn't (e.g. cached card data is
 // older than the set being drafted).
 
 // Build an index from Scryfall printing UUID → { card, printing } across all
@@ -78,7 +78,7 @@ export function resolveDraftCard(packCard, setCode, scryfallIndex) {
         fromSet: setCode,
         // MTGJSON top-level types (e.g. ["Land"], ["Land", "Sorcery"] for
         // adventure / DFC). Authoritative for reveal-order classification —
-        // works whether or not the card is in the local Cockatrice DB.
+        // works whether or not the card is in the local DB.
         types: Array.isArray(packCard.types) ? packCard.types : [],
     };
 
@@ -106,8 +106,8 @@ export function resolveDraftCard(packCard, setCode, scryfallIndex) {
 //   • Bonus-sheet cards (Special Guest etc.) close the pack regardless of
 //     printed rarity — they're the headline.
 // Land/token detection consults MTGJSON's top-level `types` array first
-// (authoritative even when the card isn't in the local Cockatrice DB), then
-// the slot name, then the local card's type fields. Without the types check
+// (authoritative even when the card isn't in the local DB), then the slot
+// name, then the local card's type fields. Without the types check
 // nonbasic lands drawn from non-land slots (e.g. FIN's Capital City coming
 // from `uncommon`, Ishgard from `wildcard`) would fall through to the rarity
 // bucket and flip in the wrong place.

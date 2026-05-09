@@ -1,5 +1,5 @@
-// Cockatrice: "1 Card Name [SET:number] [foil]?"
-const COCKATRICE_RE = /^(\d+)\s+(.+?)\s+\[([A-Za-z0-9]+):([^\]]+)\]\s*(?:\[([^\]]+)\])?\s*$/;
+// Bracketed: "1 Card Name [SET:number] [foil]?"
+const BRACKET_RE = /^(\d+)\s+(.+?)\s+\[([A-Za-z0-9]+):([^\]]+)\]\s*(?:\[([^\]]+)\])?\s*$/;
 // MTGA / our exporter: "1 Card Name (SET) number [*F*]?"
 const MTGA_RE = /^(\d+)\s+(.+?)\s+\(([A-Za-z0-9]+)\)\s+(\S+)(\s+\*?[Ff]\*?)?\s*$/;
 // Bare "count name" — used for basic lands that have no set/number
@@ -37,7 +37,7 @@ export function parseSealedPool(text) {
         if (sb) hasSideboard = true;
         const body = sb ? line.slice(sb[0].length) : line;
 
-        let m = body.match(COCKATRICE_RE);
+        let m = body.match(BRACKET_RE);
         if (m) {
             const [, count, name, setCode, number, tag] = m;
             entries.push({

@@ -54,13 +54,14 @@
             </template>
         </header>
 
-        <div v-if="cards.loading" class="empty-state">
-            <p>Loading database...</p>
-        </div>
-
-        <div v-if="error" class="empty-state">
-            <p class="error-text">{{ error }}</p>
-        </div>
+        <WelcomeOverlay
+            v-if="!cards.loaded"
+            :phase="loadPhase"
+            :received="loadReceived"
+            :total="loadTotal"
+            :error="error"
+            @retry="loadCardDb"
+        />
 
         <template v-if="cards.loaded && !cards.loading">
             <DraftPackOpener v-if="cards.showDraft && draft.phase === 'opening'" />
@@ -78,7 +79,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { useCardStore } from "./stores/cards";
 import { useDraftStore } from "./stores/draft";
 import SearchBar from "./components/SearchBar.vue";
@@ -88,25 +89,50 @@ import SealedImport from "./components/SealedImport.vue";
 import DeckBuilder from "./components/DeckBuilder.vue";
 import DraftSetup from "./components/DraftSetup.vue";
 import DraftPackOpener from "./components/DraftPackOpener.vue";
+import WelcomeOverlay from "./components/WelcomeOverlay.vue";
 
 const cards = useCardStore();
 const draft = useDraftStore();
 const error = ref(null);
 
+const loadPhase = ref("checking");
+const loadReceived = ref(0);
+const loadTotal = ref(0);
+let unsubscribeProgress = null;
+
 const poolRemaining = computed(
     () => cards.sealedPool.length - cards.deckIds.size
 );
 
-onMounted(async () => {
+async function loadCardDb() {
+    error.value = null;
     cards.loading = true;
+    loadPhase.value = "checking";
+    loadReceived.value = 0;
+    loadTotal.value = 0;
     try {
-        const xml = await window.electronAPI.readCardDatabase();
-        await cards.parseDatabase(xml);
+        const slim = await window.electronAPI.loadCardDatabase();
+        cards.loadDatabase(slim);
     } catch (err) {
         console.error("Failed to load database:", err);
         error.value = "Failed to load card database: " + err.message;
     } finally {
         cards.loading = false;
     }
+}
+
+onMounted(() => {
+    if (window.electronAPI?.onCardDbProgress) {
+        unsubscribeProgress = window.electronAPI.onCardDbProgress((p) => {
+            if (p.phase) loadPhase.value = p.phase;
+            if (typeof p.bytesReceived === "number") loadReceived.value = p.bytesReceived;
+            if (typeof p.totalBytes === "number") loadTotal.value = p.totalBytes;
+        });
+    }
+    loadCardDb();
+});
+
+onBeforeUnmount(() => {
+    if (unsubscribeProgress) unsubscribeProgress();
 });
 </script>
