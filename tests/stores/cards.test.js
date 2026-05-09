@@ -302,15 +302,6 @@ describe("useCardStore - sealed pool import", () => {
         expect(store.sealedMode).toBe(false);
         expect(store.sealedPool.length).toBe(0);
     });
-
-    it("clearSealedPool resets pool state and exits sealed mode", () => {
-        store.importSealedPool("2 Lightning Bolt [LEA:161]");
-        store.clearSealedPool();
-        expect(store.sealedMode).toBe(false);
-        expect(store.sealedPool).toEqual([]);
-        expect(store.importErrors).toEqual([]);
-        expect(store.deckIds.size).toBe(0);
-    });
 });
 
 describe("useCardStore - deck building", () => {

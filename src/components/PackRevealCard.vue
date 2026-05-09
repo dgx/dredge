@@ -5,7 +5,7 @@
             flipped,
             climax,
             foil: card.poolFoil,
-            bonus: card.draftMeta?.isBonusSheet,
+            bonus: card.packMeta?.isBonusSheet,
         }"
         :data-rarity="card.rarity"
         :style="{ animationDelay: delay + 'ms' }"
@@ -22,7 +22,7 @@
                     <div class="fallback-rarity">{{ card.rarity }}</div>
                 </div>
                 <div class="card-overlay-foil" v-if="card.poolFoil" />
-                <div class="card-overlay-rainbow" v-if="card.draftMeta?.isBonusSheet" />
+                <div class="card-overlay-rainbow" v-if="card.packMeta?.isBonusSheet" />
                 <div v-if="climax" class="climax-flash" />
             </div>
         </div>

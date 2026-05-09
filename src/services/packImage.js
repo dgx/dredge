@@ -168,7 +168,7 @@ export async function loadPackImage(setCode, boosterType, signal) {
     }
 }
 
-// Fire-and-forget prewarm. Used by the draft store right after a pack queue
+// Fire-and-forget prewarm. Used by the packs store right after a pack queue
 // is rolled, so by the time the user clicks the first pack the image is
 // already on disk + in memory and PackArt can render it synchronously.
 export function prewarmPackImages(pairs) {

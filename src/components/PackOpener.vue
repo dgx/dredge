@@ -1,6 +1,6 @@
 <template>
-    <div class="draft-opener" :data-tier="tier">
-        <div class="draft-opener-header">
+    <div class="pack-opener" :data-tier="tier">
+        <div class="pack-opener-header">
             <div class="header-left">
                 <span class="pack-progress">
                     Pack {{ packNumber }} / {{ totalPacks }}
@@ -21,9 +21,9 @@
                     size="small"
                     variant="text"
                     @click="toggleMute"
-                    :prepend-icon="draft.muted ? 'mdi-volume-off' : 'mdi-volume-high'"
+                    :prepend-icon="packs.muted ? 'mdi-volume-off' : 'mdi-volume-high'"
                 >
-                    {{ draft.muted ? "Sound off" : "Sound on" }}
+                    {{ packs.muted ? "Sound off" : "Sound on" }}
                 </v-btn>
                 <v-btn
                     size="small"
@@ -59,7 +59,7 @@
                     </div>
 
                     <div class="reveal-row">
-                        <DraftRevealCard
+                        <PackRevealCard
                             v-for="(card, i) in resolvedCards"
                             :key="card.poolId"
                             :card="card"
@@ -90,13 +90,13 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from "vue";
-import { useDraftStore } from "../stores/draft";
+import { usePackStore } from "../stores/packs";
 import { useCardStore } from "../stores/cards";
 import PackArt from "./PackArt.vue";
-import DraftRevealCard from "./DraftRevealCard.vue";
+import PackRevealCard from "./PackRevealCard.vue";
 import { playRip, playTear, playCardReveal, playFlourish, setMuted, unlockAudio } from "../services/packAudio";
 
-const draft = useDraftStore();
+const packs = usePackStore();
 const cards = useCardStore();
 
 // Stage progression for a single pack:
@@ -118,12 +118,12 @@ let revealTimer = null;
 let flipTimers = [];
 let flashTimer = null;
 
-const currentPack = computed(() => draft.currentPack);
+const currentPack = computed(() => packs.currentPack);
 
 const setCode = computed(() => currentPack.value?.setCode || "");
 const setName = computed(() => {
     const code = setCode.value;
-    const opt = draft.setOptions.find((s) => s.code === code);
+    const opt = packs.setOptions.find((s) => s.code === code);
     return opt?.name || "";
 });
 const boosterType = computed(() => currentPack.value?.simResult?.boosterType || "draft");
@@ -150,14 +150,14 @@ const symbolUrl = computed(() =>
         : ""
 );
 
-const packNumber = computed(() => draft.currentPackIndex + 1);
-const totalPacks = computed(() => draft.packQueue.length);
-const isLastPack = computed(() => draft.currentPackIndex >= draft.packQueue.length - 1);
+const packNumber = computed(() => packs.currentPackIndex + 1);
+const totalPacks = computed(() => packs.packQueue.length);
+const isLastPack = computed(() => packs.currentPackIndex >= packs.packQueue.length - 1);
 
 const resolvedCards = ref([]);
 
 watch(
-    () => draft.currentPack,
+    () => packs.currentPack,
     (pack) => {
         // New pack just slid in — reset to closed.
         if (!pack) return;
@@ -170,9 +170,11 @@ watch(
 );
 
 watch(
-    () => draft.muted,
+    () => packs.muted,
     (m) => setMuted(m)
 );
+
+
 
 // Whether this pack earns a climax beat (colored backdrop, particles, slower
 // final flip, possibly a flourish). Common-only / uncommon-only packs flip
@@ -227,7 +229,7 @@ async function onPackClick() {
         const revealAfter = tearMs > 0 ? tearMs : 200;
         revealTimer = setTimeout(() => {
             // Build resolved cards now (right when the pack visually pops open).
-            resolvedCards.value = draft.resolveCurrentPack();
+            resolvedCards.value = packs.resolveCurrentPack();
             flippedStates.value = resolvedCards.value.map(() => false);
             stage.value = "revealed";
 
@@ -257,9 +259,9 @@ async function onPackClick() {
 
 function onAdvance() {
     clearAllTimers();
-    draft.commitCurrentPack();
-    if (draft.phase === "finished") {
-        draft.exitToDeckBuilder();
+    packs.commitCurrentPack();
+    if (packs.phase === "finished") {
+        packs.exitToDeckBuilder();
     }
     // Otherwise the watcher above will reset to "closed" on the new pack.
 }
@@ -268,10 +270,10 @@ function onCancel() {
     clearAllTimers();
     // Commit the cards already revealed (fair to keep what the user saw).
     if (stage.value === "revealed") {
-        draft.commitCurrentPack();
+        packs.commitCurrentPack();
     }
-    draft.finishDraft();
-    draft.exitToDeckBuilder();
+    packs.finishOpening();
+    packs.exitToDeckBuilder();
 }
 
 function onCardClick(card) {
@@ -279,7 +281,7 @@ function onCardClick(card) {
 }
 
 function toggleMute() {
-    draft.muted = !draft.muted;
+    packs.muted = !packs.muted;
 }
 
 // Fires the moment the climax card flips. Audio flourish, particles, and the
@@ -301,7 +303,7 @@ function clearAllTimers() {
 }
 
 onMounted(() => {
-    setMuted(draft.muted);
+    setMuted(packs.muted);
 });
 
 onUnmounted(() => {
@@ -310,7 +312,7 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.draft-opener {
+.pack-opener {
     display: flex;
     flex-direction: column;
     flex: 1;
@@ -321,7 +323,7 @@ onUnmounted(() => {
     overflow: hidden;
 }
 
-.draft-opener-header {
+.pack-opener-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -485,16 +487,16 @@ onUnmounted(() => {
     opacity: 1;
 }
 
-.draft-opener[data-tier="rare"] .opener-stage.has-climaxed::before {
+.pack-opener[data-tier="rare"] .opener-stage.has-climaxed::before {
     background: radial-gradient(circle at center, rgba(255, 215, 120, 0.18), transparent 60%);
 }
 
-.draft-opener[data-tier="mythic"] .opener-stage.has-climaxed::before {
+.pack-opener[data-tier="mythic"] .opener-stage.has-climaxed::before {
     background: radial-gradient(circle at center, rgba(255, 120, 40, 0.28), transparent 60%);
     animation: pulse-mythic 2.4s ease-in-out infinite;
 }
 
-.draft-opener[data-tier="bonus"] .opener-stage.has-climaxed::before {
+.pack-opener[data-tier="bonus"] .opener-stage.has-climaxed::before {
     background:
         radial-gradient(circle at 30% 40%, rgba(255, 120, 200, 0.28), transparent 50%),
         radial-gradient(circle at 70% 60%, rgba(120, 220, 255, 0.28), transparent 50%);

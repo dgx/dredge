@@ -1,5 +1,5 @@
 // Booster pack simulator. Consumes MTGJSON set data (data.booster + data.cards)
-// and produces drafted pack contents.
+// and produces opened pack contents.
 //
 // MTGJSON booster shape (per data.booster[type]):
 //   {
@@ -19,8 +19,10 @@
 // We sample weighted-without-replacement within each slot, honor balanceColors
 // when present, and tag any card drawn from a recognized bonus-sheet slot.
 
-// Booster types we want to expose for drafting. Drafting is supposed to be fun,
-// not collector-grade or scripted prerelease promos.
+// Booster types we want to expose for opening. Pack opening is supposed to be
+// fun, not collector-grade or scripted prerelease promos. The "draft" string
+// here is MTGJSON's name for what's commonly the standard set/draft booster —
+// we keep MTGJSON's literal because it's how the API keys are spelled.
 const PREFERRED_TYPES = ["draft", "play", "default", "set", "arena"];
 const SKIP_PATTERNS = [
     "prerelease",
@@ -82,7 +84,7 @@ export function isBonusSheetSlot(slotName) {
 
 // Pick the booster type to use from `data.booster`. Caller can pass a hint to
 // override (e.g. user explicitly chose "play"); otherwise we follow the
-// drafting-first preference order.
+// opening-first preference order.
 export function pickBoosterType(boosterRoot, hint) {
     if (!boosterRoot || typeof boosterRoot !== "object") return null;
     const types = Object.keys(boosterRoot);
@@ -97,9 +99,9 @@ export function pickBoosterType(boosterRoot, hint) {
     return usable || types[0];
 }
 
-// List the booster types that are appropriate to expose to the user (drafting-
-// suitable). Returns them in preference order.
-export function listDraftableBoosterTypes(boosterRoot) {
+// List the booster types that are appropriate to expose to the user (good
+// candidates to open). Returns them in preference order.
+export function listOpenableBoosterTypes(boosterRoot) {
     if (!boosterRoot) return [];
     const types = Object.keys(boosterRoot).filter((t) => !isSkippedBoosterType(t));
     types.sort((a, b) => {
@@ -113,11 +115,11 @@ export function listDraftableBoosterTypes(boosterRoot) {
     return types;
 }
 
-// Whether a set's MTGJSON data has any drafting-suitable booster type.
-export function hasDraftableBooster(setData) {
+// Whether a set's MTGJSON data has any booster type worth opening.
+export function hasOpenableBooster(setData) {
     const booster = setData?.booster || setData?.data?.booster;
     if (!booster) return false;
-    return listDraftableBoosterTypes(booster).length > 0;
+    return listOpenableBoosterTypes(booster).length > 0;
 }
 
 // Build an index from MTGJSON uuid → card record for O(1) lookups during sampling.
@@ -141,14 +143,14 @@ export function mergeCardsIntoIndex(idx, cards) {
     return idx;
 }
 
-// Walk every sheet across every draftable booster type and return the set of
+// Walk every sheet across every openable booster type and return the set of
 // UUIDs that aren't resolvable in the current cardIndex. Used to decide whether
 // we need to pull supplemental sets (e.g. TLA's `sourceMaterial` sheet lives in
 // TLE).
 export function collectMissingSheetUuids(boosterRoot, cardIndex) {
     const missing = new Set();
     if (!boosterRoot) return missing;
-    for (const type of listDraftableBoosterTypes(boosterRoot)) {
+    for (const type of listOpenableBoosterTypes(boosterRoot)) {
         const sheets = boosterRoot[type]?.sheets || {};
         for (const sheet of Object.values(sheets)) {
             for (const uuid of Object.keys(sheet?.cards || {})) {
@@ -320,7 +322,7 @@ export function rollPacks(boosterRoot, type, cardIndex, count, rng = Math.random
 }
 
 // Determine the "headline rarity" across an array of packs. Used for badges
-// (e.g. "this draft contains a Special Guest").
+// (e.g. "this pack contains a Special Guest").
 export function summarizePackCards(cards) {
     let topRank = 0;
     let topRarity = "common";
@@ -336,7 +338,7 @@ export function summarizePackCards(cards) {
 }
 
 // Mulberry32 — small, fast, deterministic PRNG. Used for tests and "replay"
-// in case we ever want shareable draft seeds.
+// in case we ever want shareable pack seeds.
 export function makeSeededRng(seed) {
     let a = seed >>> 0;
     return function () {

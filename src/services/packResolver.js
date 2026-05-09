@@ -1,9 +1,9 @@
-// Resolves drafted pack cards (MTGJSON shape) into pool entries that the
+// Resolves opened-pack cards (MTGJSON shape) into pool entries that the
 // existing sealed-pool / deck-builder code can consume unchanged. The image
 // loader keys off Scryfall IDs (which MTGJSON exposes per printing), so the
 // actual lookup is straightforward when the card is in the local DB; we
 // synthesize a minimal stand-in when it isn't (e.g. cached card data is
-// older than the set being drafted).
+// older than the set being opened).
 
 // Build an index from Scryfall printing UUID → { card, printing } across all
 // printings of every card. Used to recover the right printing for image
@@ -21,7 +21,7 @@ export function buildScryfallIndex(allCards) {
 let poolCounter = 0;
 
 function nextPoolId() {
-    return `draft-${poolCounter++}`;
+    return `pack-${poolCounter++}`;
 }
 
 // Build a synthetic card-like object for cards missing from the local DB. The
@@ -58,7 +58,7 @@ function synthesizeCard(packCard, setCode) {
 }
 
 // Convert one pack card into a pool entry.
-export function resolveDraftCard(packCard, setCode, scryfallIndex) {
+export function resolvePackCard(packCard, setCode, scryfallIndex) {
     let card;
     let printing;
 
@@ -71,7 +71,7 @@ export function resolveDraftCard(packCard, setCode, scryfallIndex) {
         printing = card.sets[0];
     }
 
-    const draftMeta = {
+    const packMeta = {
         slot: packCard.slot,
         isFoil: !!packCard.isFoil,
         isBonusSheet: !!packCard.isBonusSheet,
@@ -88,13 +88,13 @@ export function resolveDraftCard(packCard, setCode, scryfallIndex) {
         rarity: printing.rarity || card.rarity || packCard.rarity || "common",
         bestSet: printing.code || setCode,
         // Restrict sets[] to the actual printing so the image loader's
-        // "preferred printing" pick lands on the one we just drafted.
+        // "preferred printing" pick lands on the one we just opened.
         sets: [printing],
         poolId: nextPoolId(),
         poolSetCode: setCode,
         poolNumber: printing.num || packCard.number || "",
         poolFoil: !!packCard.isFoil,
-        draftMeta,
+        packMeta,
     };
 }
 
@@ -112,10 +112,10 @@ export function resolveDraftCard(packCard, setCode, scryfallIndex) {
 // from `uncommon`, Ishgard from `wildcard`) would fall through to the rarity
 // bucket and flip in the wrong place.
 function revealPriority(card) {
-    if (card.draftMeta?.isBonusSheet) return 60;
+    if (card.packMeta?.isBonusSheet) return 60;
 
-    const metaTypes = card.draftMeta?.types || [];
-    const slot = String(card.draftMeta?.slot || "").toLowerCase();
+    const metaTypes = card.packMeta?.types || [];
+    const slot = String(card.packMeta?.slot || "").toLowerCase();
     const typeStr = `${card.type || ""} ${card.mainType || ""}`;
     const isToken =
         metaTypes.includes("Token") ||
@@ -141,7 +141,7 @@ function revealPriority(card) {
 // for the reveal animation: throwaways first, climax card last. JS sort is
 // stable so cards within the same priority bucket keep their simulator order.
 export function resolvePack(pack, setCode, scryfallIndex) {
-    const entries = pack.cards.map((c) => resolveDraftCard(c, setCode, scryfallIndex));
+    const entries = pack.cards.map((c) => resolvePackCard(c, setCode, scryfallIndex));
     entries.sort((a, b) => revealPriority(a) - revealPriority(b));
     return entries;
 }

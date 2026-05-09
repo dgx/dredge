@@ -13,7 +13,7 @@ come from Scryfall; pack box art comes from TCGPlayer's product image CDN.
 - **Electron** — desktop shell (Windows + macOS targets)
 - **Vue 3** — Composition API, `<script setup>`
 - **Vuetify 4** — UI components (lean on Vuetify props/slots first)
-- **Pinia** — state management (`cards`, `draft` stores)
+- **Pinia** — state management (`cards`, `packs` stores)
 - **Vue Router** — installed but currently unused
 - **Vite** — build tooling, with dev-server middleware that fetches and
   transforms MTGJSON data so browser dev mode works without Electron
@@ -33,25 +33,26 @@ electron/
 src/
   main.js          # Entry: installs browserFallback, registers Pinia + Vuetify
   App.vue          # Titlebar + mode toggle (Sealed Pool / All Cards); routes to
-                   # DraftSetup / DraftPackOpener / SealedImport / DeckBuilder /
-                   # CardGrid based on store flags
+                   # PackSetup / PackOpener / DeckBuilder / CardGrid based on
+                   # store flags
   plugins/
     vuetify.js     # "dredgeDark" theme + global VBtn/VTextField defaults
   stores/
     cards.js       # All-cards data, filters, sealed pool, deck (deckIds +
                    # basicLands), grouping config, deck size 40/60, view flags
-    draft.js       # Pack-opening flow: setup → loading → opening → finished;
+    packs.js       # Pack-opening flow: setup → loading → opening → finished;
                    # set selections, packQueue, currentPackIndex, audio mute
   services/
     cardGrouping.js     # type/color/cmc/rarity grouping primitives
     sealedParser.js     # Parses bracketed [SET:num] / MTGA / bare deck-list lines
+                        # (used by PackSetup's Import-from-Clipboard affordance)
     deckExporter.js     # Exports the current deck back to a list format
     imageLoader.js      # Scryfall image fetch w/ rate limiting, queue, abort,
                         # 3-tier cache (memory → disk → network)
     boosterData.js      # MTGJSON SetList + per-set fetcher (mem + disk cached);
-                        # filters to "draftable" set types
+                        # filters to "openable" set types
     boosterSimulator.js # Rolls packs from MTGJSON booster sheets/weights
-    draftResolver.js    # Maps simulator output (mtgjson uuids) → Scryfall cards
+    packResolver.js     # Maps simulator output (mtgjson uuids) → Scryfall cards
     packImage.js        # Resolves real booster box art from MTGJSON sealedProduct
                         # → TCGPlayer product-image CDN; PackArt falls back to CSS
     packAudio.js        # Web-Audio sample playback for rip/tear/flip/mythic
@@ -72,10 +73,10 @@ src/
     ManaPip.vue         # Single mana symbol
     DeckBuilder.vue     # Sealed/deck mode workspace
     DeckSummary.vue     # Mana curve + type-bar graph + counts
-    SealedImport.vue    # Paste-in deck/pool importer
-    DraftSetup.vue      # Pick sets + pack counts + booster types
-    DraftPackOpener.vue # Pack-by-pack reveal UI
-    DraftRevealCard.vue # Single-card reveal animation inside the pack opener
+    PackSetup.vue       # Pick sets + pack counts + booster types — entry view
+                        # for the sealed-deck workflow (with Import-from-Clipboard)
+    PackOpener.vue      # Pack-by-pack reveal UI
+    PackRevealCard.vue  # Single-card reveal animation inside the pack opener
     PackArt.vue         # Real TCGPlayer art if resolved, else CSS fake-pack
     WelcomeOverlay.vue  # Full-screen first-launch overlay shown while the
                         # card database downloads (logo + progress + retry)
@@ -96,9 +97,9 @@ tests/
   fixtures/sampleDatabase.js, helpers/mount.js
 ```
 
-Two Pinia stores — `cards` (browser, filters, deck, sealed pool) and `draft`
-(pack-opening flow) — communicate through `cards.openDraft()` /
-`cards.openImport()` flags consumed by `App.vue`.
+Two Pinia stores — `cards` (browser, filters, deck, sealed pool) and `packs`
+(pack-opening flow) — communicate through `cards.openPacks()` /
+`cards.closePacks()` flags consumed by `App.vue`.
 
 ## Card Database
 
@@ -146,7 +147,7 @@ Three-tier cache: memory → disk → Scryfall fetch.
 
 `SetList` has a 24h TTL; per-set data is cached indefinitely.
 `boosterSimulator.js` rolls packs from `data.booster[type]` weighted sheets;
-`draftResolver.js` maps the resulting MTGJSON uuids back to the user's card
+`packResolver.js` maps the resulting MTGJSON uuids back to the user's card
 collection (or Scryfall, when needed).
 
 ## Pack Box Art
@@ -219,5 +220,6 @@ and add an entry under `## [Unreleased]` in `CHANGELOG.md`. Move entries from
 - Virtual scrolling for browse mode (30k+ cards)
 - Browser fallback + Vite middleware lets dev / tests run without Electron
 - Default deck-build target is 40 cards (sealed); 60 selectable via toggle
-- "Draftable" set list is filtered to expansion / core / masters /
+- "Openable" set list is filtered to expansion / core / masters /
   draft_innovation / starter / funny / commander
+  (`draft_innovation` is MTGJSON's literal set-type string)

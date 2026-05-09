@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import {
     buildScryfallIndex,
-    resolveDraftCard,
+    resolvePackCard,
     resolvePack,
     _resetPoolCounter,
-} from "../../src/services/draftResolver.js";
+} from "../../src/services/packResolver.js";
 
 function makeLocalCards() {
     return [
@@ -37,8 +37,9 @@ describe("buildScryfallIndex", () => {
     });
 });
 
-describe("resolveDraftCard", () => {
+describe("resolvePackCard", () => {
     it("resolves to local printing by scryfallId, restricting sets[] to that printing", () => {
+
         const idx = buildScryfallIndex(makeLocalCards());
         const packCard = {
             mtgjsonUuid: "mtg-1",
@@ -51,7 +52,7 @@ describe("resolveDraftCard", () => {
             isBonusSheet: false,
             slot: "common",
         };
-        const entry = resolveDraftCard(packCard, "M11", idx);
+        const entry = resolvePackCard(packCard, "M11", idx);
         expect(entry.uuid).toBe("scry-m11-bolt"); // image lookup uses M11 printing
         expect(entry.bestSet).toBe("M11");
         expect(entry.sets).toHaveLength(1);
@@ -59,9 +60,9 @@ describe("resolveDraftCard", () => {
         expect(entry.poolSetCode).toBe("M11");
         expect(entry.poolNumber).toBe("146");
         expect(entry.poolFoil).toBe(false);
-        expect(entry.draftMeta.slot).toBe("common");
-        expect(entry.draftMeta.fromSet).toBe("M11");
-        expect(entry.poolId).toMatch(/^draft-\d+$/);
+        expect(entry.packMeta.slot).toBe("common");
+        expect(entry.packMeta.fromSet).toBe("M11");
+        expect(entry.poolId).toMatch(/^pack-\d+$/);
     });
 
     it("synthesizes a placeholder when card is missing from local DB", () => {
@@ -77,7 +78,7 @@ describe("resolveDraftCard", () => {
             isBonusSheet: false,
             slot: "rareMythic",
         };
-        const entry = resolveDraftCard(packCard, "ZZZ", idx);
+        const entry = resolvePackCard(packCard, "ZZZ", idx);
         expect(entry.name).toBe("Card from new set");
         expect(entry.uuid).toBe("scry-mystery"); // image loader can still try Scryfall
         expect(entry.colors).toBe("UB");
@@ -88,7 +89,7 @@ describe("resolveDraftCard", () => {
         expect(entry.sets[0].num).toBe("5");
     });
 
-    it("propagates foil and bonus-sheet flags into draftMeta", () => {
+    it("propagates foil and bonus-sheet flags into packMeta", () => {
         const idx = buildScryfallIndex(makeLocalCards());
         const packCard = {
             scryfallId: "scry-lea-bolt",
@@ -100,20 +101,20 @@ describe("resolveDraftCard", () => {
             isBonusSheet: true,
             slot: "specialGuest",
         };
-        const entry = resolveDraftCard(packCard, "LEA", idx);
+        const entry = resolvePackCard(packCard, "LEA", idx);
         expect(entry.poolFoil).toBe(true);
-        expect(entry.draftMeta.isFoil).toBe(true);
-        expect(entry.draftMeta.isBonusSheet).toBe(true);
+        expect(entry.packMeta.isFoil).toBe(true);
+        expect(entry.packMeta.isBonusSheet).toBe(true);
     });
 
     it("assigns a unique poolId per call", () => {
         const idx = buildScryfallIndex(makeLocalCards());
-        const a = resolveDraftCard(
+        const a = resolvePackCard(
             { scryfallId: "scry-lea-bolt", name: "Lightning Bolt", number: "161", rarity: "common", slot: "common", colors: [] },
             "LEA",
             idx
         );
-        const b = resolveDraftCard(
+        const b = resolvePackCard(
             { scryfallId: "scry-lea-bolt", name: "Lightning Bolt", number: "161", rarity: "common", slot: "common", colors: [] },
             "LEA",
             idx
