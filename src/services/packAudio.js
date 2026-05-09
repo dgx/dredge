@@ -13,7 +13,7 @@ import masterpieceUrl from "../assets/audio/masterpiece.wav?url";
 
 const FLOURISH = {
     mythic:      { url: mythicUrl,      peak: 1.0 },
-    masterpiece: { url: masterpieceUrl, peak: 1.0 },
+    masterpiece: { url: masterpieceUrl, peak: 0.7 },
 };
 
 let ctx = null;
