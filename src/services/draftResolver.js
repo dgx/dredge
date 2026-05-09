@@ -76,6 +76,10 @@ export function resolveDraftCard(packCard, setCode, scryfallIndex) {
         isFoil: !!packCard.isFoil,
         isBonusSheet: !!packCard.isBonusSheet,
         fromSet: setCode,
+        // MTGJSON top-level types (e.g. ["Land"], ["Land", "Sorcery"] for
+        // adventure / DFC). Authoritative for reveal-order classification —
+        // works whether or not the card is in the local Cockatrice DB.
+        types: Array.isArray(packCard.types) ? packCard.types : [],
     };
 
     return {
@@ -94,36 +98,48 @@ export function resolveDraftCard(packCard, setCode, scryfallIndex) {
     };
 }
 
-// Reveal-order priority. Lower comes out first.
-//   • Bonus-sheet cards (Special Guest etc.) lead — they're the headline
-//     regardless of printed rarity.
-//   • Then mythic → rare → uncommon → common.
-//   • Lands and tokens go last so the rares aren't buried behind basics.
-// Slot name is the most reliable land/token signal (e.g. "nonFoilLand",
-// "foilLand"); we fall back to the card's type for cards whose slot doesn't
-// say so.
+// Reveal-order priority. Lower flips first; the final entry is the climax
+// card that the pack-opener syncs the flourish + tier glow + particles to.
+//   • Tokens and lands flip first — they're the throwaway preamble.
+//   • Then commons → uncommons → rares → mythics, each tier raising the
+//     stakes as the user goes.
+//   • Bonus-sheet cards (Special Guest etc.) close the pack regardless of
+//     printed rarity — they're the headline.
+// Land/token detection consults MTGJSON's top-level `types` array first
+// (authoritative even when the card isn't in the local Cockatrice DB), then
+// the slot name, then the local card's type fields. Without the types check
+// nonbasic lands drawn from non-land slots (e.g. FIN's Capital City coming
+// from `uncommon`, Ishgard from `wildcard`) would fall through to the rarity
+// bucket and flip in the wrong place.
 function revealPriority(card) {
-    if (card.draftMeta?.isBonusSheet) return 0;
+    if (card.draftMeta?.isBonusSheet) return 60;
 
+    const metaTypes = card.draftMeta?.types || [];
     const slot = String(card.draftMeta?.slot || "").toLowerCase();
     const typeStr = `${card.type || ""} ${card.mainType || ""}`;
-    const isToken = /token/.test(slot) || /\bToken\b/.test(typeStr);
-    if (isToken) return 100;
-    const isLand = /land/.test(slot) || /\bLand\b/.test(typeStr);
-    if (isLand) return 90;
+    const isToken =
+        metaTypes.includes("Token") ||
+        /token/.test(slot) ||
+        /\bToken\b/.test(typeStr);
+    if (isToken) return 0;
+    const isLand =
+        metaTypes.includes("Land") ||
+        /land/.test(slot) ||
+        /\bLand\b/.test(typeStr);
+    if (isLand) return 10;
 
     switch (card.rarity) {
-        case "mythic": return 10;
-        case "rare": return 20;
+        case "mythic": return 50;
+        case "rare": return 40;
         case "uncommon": return 30;
-        case "common": return 40;
-        default: return 50;
+        case "common": return 20;
+        default: return 25;
     }
 }
 
 // Convert a pack (output of rollPack) + its setCode into pool entries, sorted
-// for the reveal animation: rarest first, lands/tokens last. JS sort is stable
-// so cards within the same priority bucket keep their simulator order.
+// for the reveal animation: throwaways first, climax card last. JS sort is
+// stable so cards within the same priority bucket keep their simulator order.
 export function resolvePack(pack, setCode, scryfallIndex) {
     const entries = pack.cards.map((c) => resolveDraftCard(c, setCode, scryfallIndex));
     entries.sort((a, b) => revealPriority(a) - revealPriority(b));

@@ -36,7 +36,7 @@
             </div>
         </div>
 
-        <div class="opener-stage" :class="{ 'has-revealed': stage !== 'closed' }">
+        <div class="opener-stage" :class="{ 'has-climaxed': climaxed }">
             <transition name="pack-fade" mode="out-in">
                 <div v-if="stage !== 'revealed'" key="closed" class="pack-area">
                     <PackArt
@@ -63,7 +63,9 @@
                             v-for="(card, i) in resolvedCards"
                             :key="card.poolId"
                             :card="card"
-                            :delay="i * 90"
+                            :delay="i * 60"
+                            :flipped="flippedStates[i]"
+                            :climax="hasClimax && i === resolvedCards.length - 1"
                             @click="onCardClick(card)"
                         />
                     </div>
@@ -105,9 +107,15 @@ const stage = ref("closed");
 // torn down mid-animation when cards reveal.
 const flashing = ref(false);
 const symbolFailed = ref(false);
+// Per-card flip state, parent-driven so audio + flourish + tier visuals stay
+// locked to actual flip moments instead of independent self-timers.
+const flippedStates = ref([]);
+// Flips to true at the moment the climax card flips. Gates the tier-colored
+// ambient backdrop, the particle burst, and (via flourishTier) the audio
+// flourish — so rarity is only revealed at the climax beat.
+const climaxed = ref(false);
 let revealTimer = null;
-let cardTickTimers = [];
-let flourishTimer = null;
+let flipTimers = [];
 let flashTimer = null;
 
 const currentPack = computed(() => draft.currentPack);
@@ -156,6 +164,8 @@ watch(
         stage.value = "closed";
         symbolFailed.value = false;
         resolvedCards.value = [];
+        flippedStates.value = [];
+        climaxed.value = false;
     }
 );
 
@@ -164,9 +174,14 @@ watch(
     (m) => setMuted(m)
 );
 
-const showParticles = computed(
-    () => stage.value === "revealed" && (tier.value === "rare" || tier.value === "mythic" || tier.value === "bonus")
+// Whether this pack earns a climax beat (colored backdrop, particles, slower
+// final flip, possibly a flourish). Common-only / uncommon-only packs flip
+// uniformly with no climax treatment.
+const hasClimax = computed(
+    () => tier.value === "rare" || tier.value === "mythic" || tier.value === "bonus"
 );
+
+const showParticles = computed(() => climaxed.value && hasClimax.value);
 
 const particleCount = computed(() => {
     switch (tier.value) {
@@ -213,19 +228,29 @@ async function onPackClick() {
         revealTimer = setTimeout(() => {
             // Build resolved cards now (right when the pack visually pops open).
             resolvedCards.value = draft.resolveCurrentPack();
+            flippedStates.value = resolvedCards.value.map(() => false);
             stage.value = "revealed";
 
-            // Stagger the card-flip click sounds to match the visual flips.
-            cardTickTimers = resolvedCards.value.map((_, i) =>
-                setTimeout(() => playCardReveal(), 220 + i * 90)
-            );
+            // Per-card flip timeline. Each card flips on schedule, plays a
+            // soft click, and (if it's the climax card) triggers the climax
+            // beat: tier-colored backdrop, particles, audio flourish — all
+            // locked to this single moment so audio and visual peaks coincide.
+            const FLIP_GAP = 90;        // gap between non-climax flips
+            const CLIMAX_LEAD_IN = 220; // delay before the first flip
+            const CLIMAX_HOLD = 450;    // extra pause before the headline card
+            const lastIdx = resolvedCards.value.length - 1;
+            const climaxOnLast = hasClimax.value;
 
-            // Final flourish keyed to flourishTier (see computed above).
-            const fTier = flourishTier.value;
-            if (fTier) {
-                const flourishDelay = 220 + resolvedCards.value.length * 90 + 120;
-                flourishTimer = setTimeout(() => playFlourish(fTier), flourishDelay);
-            }
+            flipTimers = resolvedCards.value.map((_, i) => {
+                const isClimaxCard = climaxOnLast && i === lastIdx;
+                const baseDelay = CLIMAX_LEAD_IN + i * FLIP_GAP;
+                const delay = isClimaxCard ? baseDelay + CLIMAX_HOLD : baseDelay;
+                return setTimeout(() => {
+                    flippedStates.value[i] = true;
+                    playCardReveal();
+                    if (isClimaxCard) onClimax();
+                }, delay);
+            });
         }, revealAfter);
     }, tearStart);
 }
@@ -257,14 +282,20 @@ function toggleMute() {
     draft.muted = !draft.muted;
 }
 
+// Fires the moment the climax card flips. Audio flourish, particles, and the
+// tier-colored ambient backdrop all key off this single beat.
+function onClimax() {
+    climaxed.value = true;
+    const fTier = flourishTier.value;
+    if (fTier) playFlourish(fTier);
+}
+
 function clearAllTimers() {
     clearTimeout(revealTimer);
-    clearTimeout(flourishTimer);
     clearTimeout(flashTimer);
-    for (const t of cardTickTimers) clearTimeout(t);
-    cardTickTimers = [];
+    for (const t of flipTimers) clearTimeout(t);
+    flipTimers = [];
     revealTimer = null;
-    flourishTimer = null;
     flashTimer = null;
     flashing.value = false;
 }
@@ -450,20 +481,20 @@ onUnmounted(() => {
     background: radial-gradient(circle at center, transparent 30%, transparent 60%);
 }
 
-.opener-stage.has-revealed::before {
+.opener-stage.has-climaxed::before {
     opacity: 1;
 }
 
-.draft-opener[data-tier="rare"] .opener-stage.has-revealed::before {
+.draft-opener[data-tier="rare"] .opener-stage.has-climaxed::before {
     background: radial-gradient(circle at center, rgba(255, 215, 120, 0.18), transparent 60%);
 }
 
-.draft-opener[data-tier="mythic"] .opener-stage.has-revealed::before {
+.draft-opener[data-tier="mythic"] .opener-stage.has-climaxed::before {
     background: radial-gradient(circle at center, rgba(255, 120, 40, 0.28), transparent 60%);
     animation: pulse-mythic 2.4s ease-in-out infinite;
 }
 
-.draft-opener[data-tier="bonus"] .opener-stage.has-revealed::before {
+.draft-opener[data-tier="bonus"] .opener-stage.has-climaxed::before {
     background:
         radial-gradient(circle at 30% 40%, rgba(255, 120, 200, 0.28), transparent 50%),
         radial-gradient(circle at 70% 60%, rgba(120, 220, 255, 0.28), transparent 50%);
