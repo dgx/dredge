@@ -452,8 +452,8 @@ onUnmounted(() => {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 14px;
-    max-width: 1280px;
+    gap: clamp(10px, 1vw, 22px);
+    width: 100%;
 }
 
 .reveal-actions {

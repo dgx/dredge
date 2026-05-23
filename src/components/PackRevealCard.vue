@@ -63,8 +63,11 @@ onUnmounted(() => {
 
 <style scoped>
 .reveal-card {
-    width: 160px;
-    height: 224px;
+    /* Scale up with viewport so cards are readable when maximized.
+       Height follows width via aspect-ratio to preserve 5:7 card proportions.
+       The vh-based cap keeps a 2-row layout fitting the stage on shorter windows. */
+    width: min(clamp(160px, 13vw, 340px), calc((100vh - 240px) / 2 * 5 / 7));
+    aspect-ratio: 5 / 7;
     perspective: 1200px;
     cursor: pointer;
     opacity: 0;
