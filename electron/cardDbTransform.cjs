@@ -12,6 +12,11 @@
 //    AllPrintings object in memory (~400+ MB exceeds V8's max string length
 //    on disk-read).
 
+// Bump when the slim DB shape changes in a way that requires re-parsing
+// AllPrintings.json. Cache loaders compare this against the value stamped
+// into meta.json and invalidate on mismatch.
+const SCHEMA_VERSION = 2;
+
 const SKIP_LAYOUTS = new Set([
     "token",
     "double_faced_token",
@@ -79,9 +84,14 @@ function createSlimBuilder() {
         for (const c of cards) {
             if (shouldSkipCard(c)) continue;
 
+            // `uuid` is the Scryfall printing ID (used as both image-lookup
+            // key against the Scryfall API and as the join key when matching
+            // MTGJSON booster-simulator output back to the local DB). MTGJSON
+            // exposes it under identifiers.scryfallId — the top-level c.uuid
+            // is MTGJSON's own internal ID and is not interchangeable.
             const printing = {
                 code,
-                uuid: c.uuid || "",
+                uuid: c.identifiers?.scryfallId || "",
                 num: c.number || "",
                 rarity: c.rarity || "",
                 picUrl: "",
@@ -136,4 +146,4 @@ function buildSlimDatabase(allPrintings) {
     return builder.finalize();
 }
 
-module.exports = { buildSlimDatabase, createSlimBuilder };
+module.exports = { buildSlimDatabase, createSlimBuilder, SCHEMA_VERSION };

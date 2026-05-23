@@ -14,7 +14,7 @@ import { pick } from "stream-json/filters/pick.js";
 import { streamObject } from "stream-json/streamers/stream-object.js";
 
 const require = createRequire(import.meta.url);
-const { createSlimBuilder } = require("./electron/cardDbTransform.cjs");
+const { createSlimBuilder, SCHEMA_VERSION } = require("./electron/cardDbTransform.cjs");
 
 export default defineConfig({
     plugins: [
@@ -50,7 +50,9 @@ export default defineConfig({
                     if (fs.existsSync(slimPath) && fs.existsSync(metaPath)) {
                         try {
                             const cached = JSON.parse(fs.readFileSync(metaPath, "utf-8"));
-                            if (!upstreamVersion || cached.version === upstreamVersion) {
+                            const versionOk = !upstreamVersion || cached.version === upstreamVersion;
+                            const schemaOk = cached.schemaVersion === SCHEMA_VERSION;
+                            if (versionOk && schemaOk) {
                                 return fs.readFileSync(slimPath, "utf-8");
                             }
                         } catch {
@@ -94,7 +96,7 @@ export default defineConfig({
                     const slim = builder.finalize();
                     const text = JSON.stringify(slim);
                     fs.writeFileSync(slimPath, text);
-                    fs.writeFileSync(metaPath, JSON.stringify({ version: upstreamVersion }));
+                    fs.writeFileSync(metaPath, JSON.stringify({ version: upstreamVersion, schemaVersion: SCHEMA_VERSION }));
                     return text;
                 }
 

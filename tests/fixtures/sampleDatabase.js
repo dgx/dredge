@@ -23,6 +23,7 @@ export const SAMPLE_ALL_PRINTINGS = {
                     rarity: "common",
                     number: "161",
                     uuid: "lea-bolt",
+                    identifiers: { scryfallId: "lea-bolt" },
                 },
                 {
                     name: "Forest",
@@ -39,6 +40,7 @@ export const SAMPLE_ALL_PRINTINGS = {
                     rarity: "common",
                     number: "347",
                     uuid: "lea-forest",
+                    identifiers: { scryfallId: "lea-forest" },
                 },
                 {
                     name: "Pegasus Token",
@@ -71,6 +73,7 @@ export const SAMPLE_ALL_PRINTINGS = {
                     rarity: "uncommon",
                     number: "200",
                     uuid: "mmq-bolt",
+                    identifiers: { scryfallId: "mmq-bolt" },
                 },
                 {
                     name: "Multi Spell",
@@ -85,6 +88,7 @@ export const SAMPLE_ALL_PRINTINGS = {
                     rarity: "rare",
                     number: "50",
                     uuid: "mmq-multi",
+                    identifiers: { scryfallId: "mmq-multi" },
                 },
             ],
         },
@@ -107,6 +111,7 @@ export const SAMPLE_ALL_PRINTINGS = {
                     rarity: "mythic",
                     number: "60",
                     uuid: "rav-multi",
+                    identifiers: { scryfallId: "rav-multi" },
                 },
             ],
         },

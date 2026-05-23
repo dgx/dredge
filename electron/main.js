@@ -8,7 +8,7 @@ const chain = require("stream-chain");
 const { parser } = require("stream-json/parser.js");
 const { pick } = require("stream-json/filters/pick.js");
 const { streamObject } = require("stream-json/streamers/stream-object.js");
-const { createSlimBuilder } = require("./cardDbTransform.cjs");
+const { createSlimBuilder, SCHEMA_VERSION } = require("./cardDbTransform.cjs");
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -247,16 +247,19 @@ ipcMain.handle("cardDb:load", async (event) => {
 
     const upstreamVersion = upstreamMeta?.data?.version || "";
     let cachedVersion = "";
+    let cachedSchema = 0;
     if (fs.existsSync(metaPath) && fs.existsSync(slimPath)) {
         try {
             const cached = JSON.parse(await fs.promises.readFile(metaPath, "utf-8"));
             cachedVersion = cached.version || "";
+            cachedSchema = cached.schemaVersion || 0;
         } catch {
             cachedVersion = "";
+            cachedSchema = 0;
         }
     }
 
-    if (cachedVersion && cachedVersion === upstreamVersion) {
+    if (cachedVersion && cachedVersion === upstreamVersion && cachedSchema === SCHEMA_VERSION) {
         const text = await fs.promises.readFile(slimPath, "utf-8");
         const slim = JSON.parse(text);
         reportProgress(sender, { phase: "done" });
@@ -268,7 +271,7 @@ ipcMain.handle("cardDb:load", async (event) => {
 
     reportProgress(sender, { phase: "writing" });
     await fs.promises.writeFile(slimPath, JSON.stringify(slim));
-    await fs.promises.writeFile(metaPath, JSON.stringify({ version: upstreamVersion }));
+    await fs.promises.writeFile(metaPath, JSON.stringify({ version: upstreamVersion, schemaVersion: SCHEMA_VERSION }));
 
     reportProgress(sender, { phase: "done" });
     return slim;

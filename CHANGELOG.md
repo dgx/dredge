@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Opened-pack cards now show their real mana cost, mana value, oracle text,
+  and type — the slim card-database transform was storing MTGJSON's internal
+  UUID as the printing's Scryfall ID, so pack resolution never matched local
+  DB entries and every card fell through to a placeholder with empty
+  mana/text and CMC 0 (breaking the deck-builder mana curve too). The
+  transform now stores `identifiers.scryfallId`, and the slim-database cache
+  is schema-versioned so existing installs re-parse `AllPrintings.json` on
+  next launch.
+
 ## [0.5.2] — 2026-05-09
 
 ### Changed
