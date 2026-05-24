@@ -125,38 +125,55 @@ jobs:
             exit 1
           fi
 
-      # Diagnostic: while the build runs, snapshot what's actually executing
-      # every 30s into a file. If electron-builder hangs we'll have a record
-      # of whether codesign is busy, blocked on network, or absent. Snapshots
-      # go to a file (not stdout) because backgrounded processes from one
-      # step don't keep writing to subsequent steps' GHA logs.
-      - name: Start build-time process snapshots
-        if: matrix.os == 'macos-14'
-        run: |
-          nohup bash -c '
-            while sleep 30; do
-              {
-                echo ""
-                echo "=== $(date -u +%H:%M:%S) snapshot ==="
-                ps -ax -o pid,etime,pcpu,command \
-                  | grep -E "codesign|electron-builder|notarytool|security|app-builder|xcrun" \
-                  | grep -v grep \
-                  || echo "(no relevant processes)"
-                echo "--- open Apple endpoints ---"
-                lsof -i -nP 2>/dev/null \
-                  | grep -E "(apple\.com|icloud|notarize)" \
-                  | head -10 \
-                  || echo "(none)"
-              } >> /tmp/snapshot.log 2>&1
-            done
-          ' </dev/null >/dev/null 2>&1 &
-          echo $! > /tmp/snapshot.pid
-          disown
-          echo "snapshot loop pid=$(cat /tmp/snapshot.pid)"
-
-      - name: Build
+      - name: Build (Windows)
+        if: matrix.os == 'windows-latest'
         timeout-minutes: 30
         run: npm run ${{ matrix.script }} -- --publish never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Mac build runs with an inline phase tracker so the GHA log shows
+      # what's actually happening every 20s — signing which binary, or
+      # waiting on Apple's notarization queue with elapsed time. Without
+      # this, electron-builder prints `signing ...` once and then says
+      # nothing for 5-20+ min while notarytool blocks on Apple, which
+      # *looks* identical to a hang even when everything's fine.
+      - name: Build (macOS, with live phase tracking)
+        if: matrix.os == 'macos-14'
+        timeout-minutes: 30
+        run: |
+          set -uo pipefail
+
+          # Print a one-line status describing what the build is doing now.
+          phase_line() {
+            local cs_pid nt_pid pid_cmd file elapsed
+            cs_pid=$(pgrep -f 'codesign --sign' 2>/dev/null | head -1)
+            nt_pid=$(pgrep -f 'notarytool submit' 2>/dev/null | head -1)
+            if [ -n "$cs_pid" ]; then
+              pid_cmd=$(ps -o command= -p "$cs_pid" 2>/dev/null)
+              file=$(printf '%s' "$pid_cmd" | grep -oE '/[^ ]+\.app/[^ ]+' | tail -1)
+              printf '>> [%s] SIGNING: %s\n' "$(date -u +%H:%M:%S)" "${file##*/}"
+            elif [ -n "$nt_pid" ]; then
+              elapsed=$(ps -o etime= -p "$nt_pid" 2>/dev/null | tr -d ' ')
+              printf '>> [%s] NOTARIZING — waiting on Apple (elapsed: %s, typical: 2-15 min)\n' \
+                "$(date -u +%H:%M:%S)" "${elapsed:-?}"
+            else
+              printf '>> [%s] electron-builder phase (packaging / dmg / stapling / other)\n' \
+                "$(date -u +%H:%M:%S)"
+            fi
+          }
+
+          # Background tracker — stdout lines interleave live in the GHA log
+          # with electron-builder's own output.
+          (
+            while sleep 20; do
+              phase_line || true
+            done
+          ) &
+          TRACKER_PID=$!
+          trap "kill $TRACKER_PID 2>/dev/null || true" EXIT
+
+          npm run ${{ matrix.script }} -- --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # CSC_LINK intentionally NOT set — the cert is already in the
@@ -166,19 +183,6 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           DEBUG: electron-builder
-
-      - name: Dump process snapshots
-        if: always() && matrix.os == 'macos-14'
-        run: |
-          if [ -f /tmp/snapshot.pid ]; then
-            kill "$(cat /tmp/snapshot.pid)" 2>/dev/null || true
-          fi
-          echo "=== build-time process snapshot log ==="
-          if [ -f /tmp/snapshot.log ]; then
-            cat /tmp/snapshot.log
-          else
-            echo "(no snapshot log captured)"
-          fi
 
       - name: Upload to release
         uses: softprops/action-gh-release@v2
