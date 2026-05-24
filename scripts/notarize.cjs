@@ -19,9 +19,14 @@ const path = require("path");
 const POLL_INTERVAL_MS = 30 * 1000;
 const MAX_WAIT_MS = 45 * 60 * 1000;
 
+// Use fs.writeSync to bypass any block buffering on process.stdout — when
+// stdout is a pipe (CI), Node may buffer block-sized chunks, hiding our
+// progress until enough output accumulates. writeSync to fd 1 is unbuffered.
 function log(msg) {
-    process.stdout.write(`[notarize] ${msg}\n`);
+    fs.writeSync(1, `[notarize] ${msg}\n`);
 }
+
+log("hook module loaded");
 
 function fmtElapsed(startMs) {
     const s = Math.floor((Date.now() - startMs) / 1000);
@@ -38,6 +43,7 @@ function notarytoolJson(args) {
 }
 
 module.exports = async function notarize(context) {
+    log(`hook invoked (platform=${context.electronPlatformName})`);
     if (context.electronPlatformName !== "darwin") return;
 
     const { APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID } = process.env;
