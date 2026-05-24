@@ -52,9 +52,11 @@
 
         <WelcomeOverlay
             v-if="!cards.loaded"
-            :phase="loadPhase"
+            :phase="overlayPhase"
             :received="loadReceived"
             :total="loadTotal"
+            :update-percent="updatePercent"
+            :update-version="updateVersion"
             :error="error"
             @retry="loadCardDb"
         />
@@ -94,6 +96,31 @@ const loadReceived = ref(0);
 const loadTotal = ref(0);
 let unsubscribeProgress = null;
 
+// Update gate: block card-DB load until the update check resolves so that an
+// available update can be downloaded + installed before the user starts using
+// the app. Times out (UPDATE_GATE_TIMEOUT_MS) so a hung check can't lock startup.
+const UPDATE_GATE_TIMEOUT_MS = 8000;
+const updateGateOpen = ref(true);
+const updatePhase = ref("update-checking");
+const updatePercent = ref(0);
+const updateVersion = ref("");
+let unsubscribeUpdate = null;
+let updateGateTimeout = null;
+
+const overlayPhase = computed(() =>
+    updateGateOpen.value ? updatePhase.value : loadPhase.value
+);
+
+function closeUpdateGate() {
+    if (!updateGateOpen.value) return;
+    updateGateOpen.value = false;
+    if (updateGateTimeout) {
+        clearTimeout(updateGateTimeout);
+        updateGateTimeout = null;
+    }
+    loadCardDb();
+}
+
 const poolRemaining = computed(
     () => cards.sealedPool.length - cards.deckIds.size
 );
@@ -123,10 +150,46 @@ onMounted(() => {
             if (typeof p.totalBytes === "number") loadTotal.value = p.totalBytes;
         });
     }
-    loadCardDb();
+
+    if (window.electronAPI?.onUpdateEvent) {
+        unsubscribeUpdate = window.electronAPI.onUpdateEvent((p) => {
+            const phase = p?.phase;
+            if (phase === "checking") {
+                updatePhase.value = "update-checking";
+            } else if (phase === "available") {
+                updatePhase.value = "update-downloading";
+                updateVersion.value = p.version || "";
+            } else if (phase === "downloading") {
+                updatePhase.value = "update-downloading";
+                updatePercent.value = p.percent || 0;
+            } else if (phase === "downloaded") {
+                updateVersion.value = p.version || updateVersion.value;
+                if (updateGateOpen.value) {
+                    updatePhase.value = "update-installing";
+                    window.electronAPI.quitAndInstallUpdate?.();
+                }
+                // If gate already closed (rare race after the checking-phase
+                // timeout), electron-updater's autoInstallOnAppQuit will apply
+                // the update on next quit.
+            } else if (phase === "none" || phase === "error") {
+                closeUpdateGate();
+            }
+        });
+        // Only time out while still checking. Once a download has started we
+        // wait for it; otherwise a slow network would dump the user into the
+        // app and defeat the point of installing-at-startup.
+        updateGateTimeout = setTimeout(() => {
+            if (updatePhase.value === "update-checking") closeUpdateGate();
+        }, UPDATE_GATE_TIMEOUT_MS);
+    } else {
+        // Dev / browser mode — no auto-update channel, skip the gate.
+        closeUpdateGate();
+    }
 });
 
 onBeforeUnmount(() => {
     if (unsubscribeProgress) unsubscribeProgress();
+    if (unsubscribeUpdate) unsubscribeUpdate();
+    if (updateGateTimeout) clearTimeout(updateGateTimeout);
 });
 </script>

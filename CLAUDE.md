@@ -195,6 +195,58 @@ release script extracts the matching `## [<version>]` section from
 `CHANGELOG.md` and uses it as the GitHub release body, so make sure the
 CHANGELOG entry for the new version exists before running the script.
 
+## Auto-update
+
+Built installers self-update via `electron-updater` against GitHub Releases
+(`dgx/dredge`). On launch (production only) `electron/main.js` calls
+`autoUpdater.checkForUpdates()` and emits `update:event` IPC messages
+(`checking → available → downloading → downloaded`).
+
+The renderer (`App.vue`) gates card-database loading on this update check
+so an available update is downloaded and installed *before* the user
+starts the app — no manual relaunch required. The existing
+`WelcomeOverlay` doubles as the update screen ("Checking for updates" →
+"Downloading update vX.Y.Z" → "Installing update — Dredge will restart").
+On `downloaded` the renderer calls `update:quitAndInstall`, which
+electron-updater uses to relaunch the new version.
+
+The gate has a check-phase timeout (`UPDATE_GATE_TIMEOUT_MS` in
+`App.vue`, 8s) so a hung network can't lock startup — but once a download
+has begun the gate stays open and waits for it to finish. In dev/browser
+mode `window.electronAPI.onUpdateEvent` is undefined and the gate is
+skipped immediately.
+
+For this to work, each GitHub Release must contain `latest.yml` (Windows)
+and `latest-mac.yml` (macOS) alongside the installer — `release.yml`
+uploads both. `package.json` carries the `build.publish` block with the
+GitHub provider config that electron-updater reads.
+
+### Code Signing
+
+macOS builds are signed with a **Developer ID Application** cert and
+notarized via Apple's notarytool — this is required because Squirrel.Mac
+refuses to apply updates to unsigned apps. The cert + notarization
+credentials are stored as GitHub repo secrets and injected into the
+release workflow:
+
+- `CSC_LINK` — base64 of the `.p12` containing the Developer ID cert + private key
+- `CSC_KEY_PASSWORD` — password used when exporting the `.p12`
+- `APPLE_ID` — Apple ID email used to access the Developer Program
+- `APPLE_APP_SPECIFIC_PASSWORD` — app-specific password from appleid.apple.com
+- `APPLE_TEAM_ID` — 10-character Team ID from developer.apple.com → Membership
+
+`CSC_*` secrets are gated on `matrix.os == 'macos-14'` so the Windows job
+doesn't accidentally try to sign with a Developer ID cert.
+
+When the cert expires (~5 years), generate a new CSR + cert and rotate
+`CSC_LINK` / `CSC_KEY_PASSWORD`. The private key (`.key` file) used to
+create the CSR must be kept somewhere safe — losing it means revoking
+the cert and starting over.
+
+Windows updates work without signing (NSIS verifies the installer via
+the SHA512 in `latest.yml`); SmartScreen warnings can be eliminated
+later with an EV code-signing cert.
+
 ## Code Style
 
 - Vue 3 Composition API with `<script setup>`

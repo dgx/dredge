@@ -8,6 +8,7 @@ const chain = require("stream-chain");
 const { parser } = require("stream-json/parser.js");
 const { pick } = require("stream-json/filters/pick.js");
 const { streamObject } = require("stream-json/streamers/stream-object.js");
+const { autoUpdater } = require("electron-updater");
 const { createSlimBuilder, SCHEMA_VERSION } = require("./cardDbTransform.cjs");
 
 const isDev = process.env.NODE_ENV === "development";
@@ -45,7 +46,12 @@ function createWindow() {
     }
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+    createWindow();
+    if (!isDev) {
+        setupAutoUpdater();
+    }
+});
 
 app.on("window-all-closed", () => {
     app.quit();
@@ -55,6 +61,35 @@ app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
         createWindow();
     }
+});
+
+// --- Auto-update ---
+
+function sendUpdateEvent(payload) {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send("update:event", payload);
+    }
+}
+
+function setupAutoUpdater() {
+    autoUpdater.autoDownload = true;
+    autoUpdater.autoInstallOnAppQuit = true;
+
+    autoUpdater.on("checking-for-update", () => sendUpdateEvent({ phase: "checking" }));
+    autoUpdater.on("update-available", (info) => sendUpdateEvent({ phase: "available", version: info?.version }));
+    autoUpdater.on("update-not-available", () => sendUpdateEvent({ phase: "none" }));
+    autoUpdater.on("download-progress", (p) => sendUpdateEvent({ phase: "downloading", percent: p?.percent || 0 }));
+    autoUpdater.on("update-downloaded", (info) => sendUpdateEvent({ phase: "downloaded", version: info?.version }));
+    autoUpdater.on("error", (err) => sendUpdateEvent({ phase: "error", message: err?.message || String(err) }));
+
+    autoUpdater.checkForUpdates().catch(() => {
+        // Network / signature errors are surfaced via the "error" event above;
+        // swallow the promise rejection so it doesn't become an unhandled rejection.
+    });
+}
+
+ipcMain.handle("update:quitAndInstall", () => {
+    autoUpdater.quitAndInstall();
 });
 
 // --- IPC Handlers ---

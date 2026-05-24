@@ -12,4 +12,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
     getCachePath: () => ipcRenderer.invoke("cache:getPath"),
     fetchMtgjsonSetList: () => ipcRenderer.invoke("mtgjson:fetchSetList"),
     fetchMtgjsonSet: (setCode) => ipcRenderer.invoke("mtgjson:fetchSet", setCode),
+    onUpdateEvent: (cb) => {
+        const listener = (_event, payload) => cb(payload);
+        ipcRenderer.on("update:event", listener);
+        return () => ipcRenderer.removeListener("update:event", listener);
+    },
+    quitAndInstallUpdate: () => ipcRenderer.invoke("update:quitAndInstall"),
 });

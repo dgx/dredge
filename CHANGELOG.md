@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.4] — 2026-05-24
+
+### Added
+- Auto-update via `electron-updater`. On launch (production only) Dredge
+  checks GitHub Releases for a newer version *before* loading the card
+  database — if an update is available it downloads, applies, and
+  relaunches automatically, so the user never has to launch + restart
+  manually. The "Checking for updates / Downloading update vX.Y.Z" screen
+  is shown in the existing WelcomeOverlay.
+- macOS builds are signed with a Developer ID Application cert and
+  notarized via Apple's notarytool — required for macOS auto-update
+  (Squirrel.Mac refuses unsigned updates) and clears the "unidentified
+  developer" Gatekeeper warning on first launch. The cert and
+  notarization credentials are stored as GitHub repo secrets; the
+  release workflow imports the cert into a temp keychain via
+  `apple-actions/import-codesign-certs` so codesign can use it
+  non-interactively.
+- Release workflow now includes diagnostic probes that isolate the
+  signing pipeline into three independent checks (keychain ACL, TSA
+  reachability, full codesign with timestamp), uses a pure-shell
+  watchdog so it works on macos-14 ARM runners, and runs a background
+  process-snapshot loop so a future hang has actual evidence attached
+  to the job log.
+- `scripts/release.cjs` refuses to bump the version if `CHANGELOG.md`
+  has no populated `## [<version>]` section — prevents accidentally
+  shipping a release with empty notes.
+
 ## [0.5.3] — 2026-05-23
 
 ### Fixed

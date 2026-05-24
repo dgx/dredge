@@ -19,13 +19,19 @@
                 </template>
                 <template v-else>
                     <p class="welcome-status">{{ statusLine }}</p>
-                    <p v-if="phase !== 'checking'" class="welcome-explain">
-                        First launch downloads the card database from MTGJSON.
-                        This only happens once. Future launches read from a
-                        local cache.
-                    </p>
+                    <p v-if="explainLine" class="welcome-explain">{{ explainLine }}</p>
 
-                    <template v-if="phase === 'downloading' && total > 0">
+                    <template v-if="phase === 'update-downloading'">
+                        <div class="welcome-bar">
+                            <div
+                                class="welcome-bar-fill"
+                                :style="{ width: updatePercent + '%' }"
+                            />
+                        </div>
+                        <p class="welcome-bytes">{{ updatePercent.toFixed(0) }}%</p>
+                    </template>
+
+                    <template v-else-if="phase === 'downloading' && total > 0">
                         <div class="welcome-bar">
                             <div
                                 class="welcome-bar-fill"
@@ -72,6 +78,8 @@ const props = defineProps({
     phase: { type: String, default: "checking" },
     received: { type: Number, default: 0 },
     total: { type: Number, default: 0 },
+    updatePercent: { type: Number, default: 0 },
+    updateVersion: { type: String, default: "" },
     error: { type: String, default: null },
 });
 
@@ -79,6 +87,12 @@ defineEmits(["retry"]);
 
 const statusLine = computed(() => {
     switch (props.phase) {
+        case "update-checking": return "Checking for updates…";
+        case "update-downloading":
+            return props.updateVersion
+                ? `Downloading update v${props.updateVersion}…`
+                : "Downloading update…";
+        case "update-installing": return "Installing update — Dredge will restart…";
         case "checking": return "Checking for card data updates…";
         case "downloading": return "Downloading card data from MTGJSON…";
         case "parsing": return "Indexing cards…";
@@ -86,6 +100,15 @@ const statusLine = computed(() => {
         case "done": return "Ready.";
         default: return "Loading…";
     }
+});
+
+const explainLine = computed(() => {
+    if (props.phase === "update-checking") return null;
+    if (props.phase === "update-downloading" || props.phase === "update-installing") {
+        return "Dredge will restart automatically once the new version is ready.";
+    }
+    if (props.phase === "checking") return null;
+    return "First launch downloads the card database from MTGJSON. This only happens once. Future launches read from a local cache.";
 });
 
 const percent = computed(() => {

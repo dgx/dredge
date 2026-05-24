@@ -21,13 +21,17 @@ jobs:
             artifacts: |
               dist-electron/*.exe
               dist-electron/*.exe.blockmap
+              dist-electron/latest.yml
           - os: macos-14
             script: electron:build:mac
             artifacts: |
               dist-electron/*.dmg
               dist-electron/*.dmg.blockmap
+              dist-electron/latest-mac.yml
 
     runs-on: ${{ matrix.os }}
+    # Cap the job so a hung step fails fast instead of burning CI minutes.
+    timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@v4
@@ -39,11 +43,142 @@ jobs:
 
       - run: npm ci
 
+      # Import the Developer ID cert into a temp keychain *before*
+      # electron-builder runs. apple-actions/import-codesign-certs handles
+      # `security set-key-partition-list` for us, which is what codesign
+      # needs in order to access the key without a UI prompt.
+      - name: Import macOS signing certificate
+        if: matrix.os == 'macos-14'
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.CSC_LINK }}
+          p12-password: ${{ secrets.CSC_KEY_PASSWORD }}
+
+      # Diagnostic: split the signing pipeline into its three parts (keychain
+      # ACL, network to Apple's TSA, codesign with timestamp) and test each
+      # in isolation, so a failure tells us which one is broken instead of
+      # leaving us guessing. Uses a pure-shell watchdog because gtimeout
+      # isn't preinstalled on macos-14 ARM runners.
+      - name: Probe codesign pipeline
+        if: matrix.os == 'macos-14'
+        run: |
+          set -uo pipefail
+
+          # POSIX timeout: run "$@", kill after $1 seconds if still running.
+          run_with_timeout() {
+            local secs=$1; shift
+            "$@" &
+            local pid=$!
+            ( sleep "$secs"; kill -TERM "$pid" 2>/dev/null ) &
+            local watchdog=$!
+            wait "$pid"; local rc=$?
+            kill -TERM "$watchdog" 2>/dev/null; wait "$watchdog" 2>/dev/null || true
+            return "$rc"
+          }
+
+          echo "=== keychains ==="
+          security list-keychains -d user
+          security default-keychain
+          echo ""
+          echo "=== codesigning identities ==="
+          security find-identity -v -p codesigning
+          IDENTITY=$(security find-identity -v -p codesigning \
+            | awk -F'"' '/Developer ID Application/ { print $2; exit }')
+          if [ -z "$IDENTITY" ]; then
+            echo "✗ no Developer ID Application identity found"; exit 1
+          fi
+          echo "Using identity: $IDENTITY"
+          echo ""
+
+          echo "=== probe 1: network reachability to timestamp.apple.com ==="
+          curl -sS --connect-timeout 10 --max-time 20 -o /dev/null \
+            -w "HTTP %{http_code}, connect=%{time_connect}s, total=%{time_total}s\n" \
+            http://timestamp.apple.com/ts01 \
+            || echo "✗ couldn't reach timestamp.apple.com (TSA) — TSA-based signing will hang"
+          echo ""
+
+          cat > /tmp/hello.c <<'C'
+          int main(void) { return 0; }
+          C
+          cc /tmp/hello.c -o /tmp/hello1
+          cp /tmp/hello1 /tmp/hello2
+
+          echo "=== probe 2: codesign WITHOUT --timestamp (no network needed) ==="
+          if run_with_timeout 30 codesign \
+              --sign "$IDENTITY" --options runtime --force --verbose=4 \
+              /tmp/hello1; then
+            echo "✓ keychain access works (codesign can use the key)"
+          else
+            echo "✗ codesign without --timestamp failed/hung — keychain ACL is broken"
+            exit 1
+          fi
+          echo ""
+
+          echo "=== probe 3: codesign WITH --timestamp (uses TSA over network) ==="
+          if run_with_timeout 90 codesign \
+              --sign "$IDENTITY" --timestamp --options runtime --force --verbose=4 \
+              /tmp/hello2; then
+            echo "✓ timestamp.apple.com is responding; full codesign pipeline healthy"
+          else
+            echo "✗ codesign WITH --timestamp failed/hung — TSA is unreachable or unresponsive"
+            echo "  electron-builder's signing step will hang the same way."
+            exit 1
+          fi
+
+      # Diagnostic: while the build runs, snapshot what's actually executing
+      # every 30s into a file. If electron-builder hangs we'll have a record
+      # of whether codesign is busy, blocked on network, or absent. Snapshots
+      # go to a file (not stdout) because backgrounded processes from one
+      # step don't keep writing to subsequent steps' GHA logs.
+      - name: Start build-time process snapshots
+        if: matrix.os == 'macos-14'
+        run: |
+          nohup bash -c '
+            while sleep 30; do
+              {
+                echo ""
+                echo "=== $(date -u +%H:%M:%S) snapshot ==="
+                ps -ax -o pid,etime,pcpu,command \
+                  | grep -E "codesign|electron-builder|notarytool|security|app-builder|xcrun" \
+                  | grep -v grep \
+                  || echo "(no relevant processes)"
+                echo "--- open Apple endpoints ---"
+                lsof -i -nP 2>/dev/null \
+                  | grep -E "(apple\.com|icloud|notarize)" \
+                  | head -10 \
+                  || echo "(none)"
+              } >> /tmp/snapshot.log 2>&1
+            done
+          ' </dev/null >/dev/null 2>&1 &
+          echo $! > /tmp/snapshot.pid
+          disown
+          echo "snapshot loop pid=$(cat /tmp/snapshot.pid)"
+
       - name: Build
+        timeout-minutes: 30
         run: npm run ${{ matrix.script }} -- --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CSC_IDENTITY_AUTO_DISCOVERY: false
+          # CSC_LINK intentionally NOT set — the cert is already in the
+          # keychain from the import step above, and electron-builder will
+          # auto-discover the Developer ID Application identity from it.
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          DEBUG: electron-builder
+
+      - name: Dump process snapshots
+        if: always() && matrix.os == 'macos-14'
+        run: |
+          if [ -f /tmp/snapshot.pid ]; then
+            kill "$(cat /tmp/snapshot.pid)" 2>/dev/null || true
+          fi
+          echo "=== build-time process snapshot log ==="
+          if [ -f /tmp/snapshot.log ]; then
+            cat /tmp/snapshot.log
+          else
+            echo "(no snapshot log captured)"
+          fi
 
       - name: Upload to release
         uses: softprops/action-gh-release@v2
