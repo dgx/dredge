@@ -31,9 +31,9 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     # Cap the job so a real hang fails fast. Apple's notarization queue
-    # can legitimately take 30+ min during peak load, so the headroom is
-    # set to accommodate that without burning the whole 6h GHA default.
-    timeout-minutes: 75
+    # can legitimately take 45+ min during peak load (observed), so the
+    # headroom accommodates that without burning the whole 6h GHA default.
+    timeout-minutes: 90
 
     steps:
       - uses: actions/checkout@v4
@@ -142,7 +142,7 @@ jobs:
       # *looks* identical to a hang even when everything's fine.
       - name: Build (macOS, with live phase tracking)
         if: matrix.os == 'macos-14'
-        timeout-minutes: 60
+        timeout-minutes: 75
         run: |
           set -uo pipefail
 

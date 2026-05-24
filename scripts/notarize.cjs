@@ -17,7 +17,11 @@ const fs = require("fs");
 const path = require("path");
 
 const POLL_INTERVAL_MS = 30 * 1000;
-const MAX_WAIT_MS = 45 * 60 * 1000;
+// Apple's SLA is "most under 15 min, vast majority under an hour." We've
+// observed a submission sit In Progress for 45+ min, so give the queue real
+// headroom rather than failing a healthy-but-slow notarization. The GHA job
+// (timeout-minutes: 90) and build step (75) bound this from the outside.
+const MAX_WAIT_MS = 70 * 60 * 1000;
 
 // Use fs.writeSync to bypass any block buffering on process.stdout — when
 // stdout is a pipe (CI), Node may buffer block-sized chunks, hiding our
