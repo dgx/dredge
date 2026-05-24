@@ -39,6 +39,7 @@
       "owner": "dgx",
       "repo": "dredge"
     },
+    "afterSign": "scripts/notarize.cjs",
     "win": {
       "target": "nsis",
       "icon": "build/icon.png"
@@ -49,8 +50,7 @@
         "arch": "arm64"
       },
       "category": "public.app-category.utilities",
-      "icon": "build/icon.png",
-      "notarize": true
+      "icon": "build/icon.png"
     }
   },
   "dependencies": {

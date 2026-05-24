@@ -30,8 +30,10 @@ jobs:
               dist-electron/latest-mac.yml
 
     runs-on: ${{ matrix.os }}
-    # Cap the job so a hung step fails fast instead of burning CI minutes.
-    timeout-minutes: 45
+    # Cap the job so a real hang fails fast. Apple's notarization queue
+    # can legitimately take 30+ min during peak load, so the headroom is
+    # set to accommodate that without burning the whole 6h GHA default.
+    timeout-minutes: 75
 
     steps:
       - uses: actions/checkout@v4
@@ -127,7 +129,7 @@ jobs:
 
       - name: Build (Windows)
         if: matrix.os == 'windows-latest'
-        timeout-minutes: 30
+        timeout-minutes: 60
         run: npm run ${{ matrix.script }} -- --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -140,7 +142,7 @@ jobs:
       # *looks* identical to a hang even when everything's fine.
       - name: Build (macOS, with live phase tracking)
         if: matrix.os == 'macos-14'
-        timeout-minutes: 30
+        timeout-minutes: 60
         run: |
           set -uo pipefail
 
