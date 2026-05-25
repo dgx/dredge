@@ -38,8 +38,6 @@ function log(msg) {
     fs.writeSync(1, `[notarize] ${msg}\n`);
 }
 
-log("hook module loaded");
-
 function fmtElapsed(startMs) {
     const s = Math.floor((Date.now() - startMs) / 1000);
     return `${Math.floor(s / 60)}m${(s % 60).toString().padStart(2, "0")}s`;
