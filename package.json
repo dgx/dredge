@@ -1,6 +1,6 @@
 {
   "name": "dredge",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "description": "Magic: The Gathering card browser",
   "main": "electron/main.js",
   "scripts": {
