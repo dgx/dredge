@@ -26,6 +26,7 @@
   "build": {
     "appId": "com.dgx.dredge",
     "productName": "Dredge Deckbuilder",
+    "artifactName": "Dredge-${version}-${arch}.${ext}",
     "directories": {
       "output": "dist-electron"
     },

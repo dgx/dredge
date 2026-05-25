@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.6] — 2026-05-25
+
+### Fixed
+- Auto-update was silently failing: `productName` ("Dredge Deckbuilder")
+  contains spaces, so GitHub rewrote the uploaded installer's spaces to
+  dots (`Dredge.Deckbuilder.Setup.X.Y.Z.exe`) while electron-builder wrote
+  hyphens into `latest.yml` (`Dredge-Deckbuilder-Setup-X.Y.Z.exe`). The
+  filename mismatch made electron-updater request a URL that 404s, so the
+  download errored and the app silently booted the old version. Set a
+  space-free `build.artifactName` (`Dredge-${version}-${arch}.${ext}`) so
+  the asset name, `latest.yml`, and the requested URL all match.
+
 ## [0.5.5] — 2026-05-25
 
 ### Added

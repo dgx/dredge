@@ -80,7 +80,12 @@ function setupAutoUpdater() {
     autoUpdater.on("update-not-available", () => sendUpdateEvent({ phase: "none" }));
     autoUpdater.on("download-progress", (p) => sendUpdateEvent({ phase: "downloading", percent: p?.percent || 0 }));
     autoUpdater.on("update-downloaded", (info) => sendUpdateEvent({ phase: "downloaded", version: info?.version }));
-    autoUpdater.on("error", (err) => sendUpdateEvent({ phase: "error", message: err?.message || String(err) }));
+    autoUpdater.on("error", (err) => {
+        // Surface to the packaged app's stderr/devtools — update errors were
+        // otherwise swallowed (the renderer treats "error" like "no update").
+        console.error("[autoUpdater] error:", err?.stack || err?.message || err);
+        sendUpdateEvent({ phase: "error", message: err?.message || String(err) });
+    });
 
     autoUpdater.checkForUpdates().catch(() => {
         // Network / signature errors are surfaced via the "error" event above;
