@@ -1,7 +1,14 @@
 <template>
     <v-app>
         <header class="app-titlebar">
-            <span class="titlebar-text">Dredge</span>
+            <button
+                type="button"
+                class="titlebar-text no-drag"
+                @click="aboutOpen = true"
+                title="About Dredge"
+            >
+                Dredge
+            </button>
 
             <template v-if="cards.loaded && !cards.showPacks">
                 <v-btn-toggle
@@ -72,6 +79,8 @@
         </template>
 
         <CardDetail v-if="cards.selectedCard" />
+
+        <AboutDialog v-model="aboutOpen" />
     </v-app>
 </template>
 
@@ -86,10 +95,12 @@ import DeckBuilder from "./components/DeckBuilder.vue";
 import PackSetup from "./components/PackSetup.vue";
 import PackOpener from "./components/PackOpener.vue";
 import WelcomeOverlay from "./components/WelcomeOverlay.vue";
+import AboutDialog from "./components/AboutDialog.vue";
 
 const cards = useCardStore();
 const packs = usePackStore();
 const error = ref(null);
+const aboutOpen = ref(false);
 
 const loadPhase = ref("checking");
 const loadReceived = ref(0);

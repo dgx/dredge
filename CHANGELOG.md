@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.5] — 2026-05-25
+
+### Added
+- About dialog: clicking the "Dredge" wordmark in the titlebar opens an
+  About panel showing the running version, tagline, and data-source
+  credits (MTGJSON, Scryfall, TCGplayer) — handy for confirming which build
+  is running after an auto-update. The version is injected from
+  `package.json` at build time via a Vite `__APP_VERSION__` define.
+
 ## [0.5.4] — 2026-05-24
 
 ### Added

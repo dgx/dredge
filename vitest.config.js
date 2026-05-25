@@ -3,6 +3,9 @@ import vue from "@vitejs/plugin-vue";
 
 export default defineConfig({
     plugins: [vue()],
+    define: {
+        __APP_VERSION__: JSON.stringify("0.0.0-test"),
+    },
     // Pre-bundle Vuetify so vite doesn't re-transform every component file in every worker.
     optimizeDeps: {
         include: ["vuetify", "vuetify/components", "vuetify/directives"],

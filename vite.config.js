@@ -15,8 +15,12 @@ import { streamObject } from "stream-json/streamers/stream-object.js";
 
 const require = createRequire(import.meta.url);
 const { createSlimBuilder, SCHEMA_VERSION } = require("./electron/cardDbTransform.cjs");
+const { version: APP_VERSION } = require("./package.json");
 
 export default defineConfig({
+    define: {
+        __APP_VERSION__: JSON.stringify(APP_VERSION),
+    },
     plugins: [
         vue(),
         vuetify({ autoImport: true }),
