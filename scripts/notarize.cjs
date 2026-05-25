@@ -17,11 +17,19 @@ const fs = require("fs");
 const path = require("path");
 
 const POLL_INTERVAL_MS = 30 * 1000;
-// Apple's SLA is "most under 15 min, vast majority under an hour." We've
-// observed a submission sit In Progress for 45+ min, so give the queue real
-// headroom rather than failing a healthy-but-slow notarization. The GHA job
-// (timeout-minutes: 90) and build step (75) bound this from the outside.
-const MAX_WAIT_MS = 70 * 60 * 1000;
+// A warm account notarizes in 2-15 min. A NEW/cold account (Apple-side
+// condition since ~Jan 2026) sticks submissions at "In Progress" for
+// 24-72h — no amount of CI waiting fixes that, it just burns expensive
+// mac-runner minutes. So cap the wait low: long enough for a warm account,
+// short enough to bail fast and not pay for a queue we can't influence.
+const MAX_WAIT_MS = 20 * 60 * 1000;
+
+// Whether a notarization that doesn't finish in time should FAIL the build.
+// Default false: while the Developer account is cold, we still want a
+// signed (if un-stapled) DMG produced and uploaded rather than a red ✗
+// after a long wait. Set NOTARIZE_REQUIRED=1 for real public releases,
+// once the account has warmed up and notarization completes reliably.
+const NOTARIZE_REQUIRED = process.env.NOTARIZE_REQUIRED === "1";
 
 // Use fs.writeSync to bypass any block buffering on process.stdout — when
 // stdout is a pipe (CI), Node may buffer block-sized chunks, hiding our
@@ -85,10 +93,18 @@ module.exports = async function notarize(context) {
     let lastStatus = "";
     while (true) {
         if (Date.now() - submitStart > MAX_WAIT_MS) {
-            throw new Error(
-                `Notarization timeout after ${fmtElapsed(submitStart)} (submission ${id}). ` +
-                `Check status with: xcrun notarytool info ${id} --apple-id ... --password ... --team-id ...`
-            );
+            const detail =
+                `Notarization did not finish in ${fmtElapsed(submitStart)} (submission ${id}, still ${lastStatus || "In Progress"}). ` +
+                `This is the known new/cold-account backlog — submissions can sit In Progress for 24-72h until Apple warms up the account. ` +
+                `Re-check later with: xcrun notarytool info ${id} --apple-id ... --password ... --team-id ...`;
+            if (NOTARIZE_REQUIRED) {
+                throw new Error(detail);
+            }
+            log(`WARNING: ${detail}`);
+            log(`NOTARIZE_REQUIRED is not set — continuing with a signed but UN-STAPLED build. ` +
+                `Gatekeeper will block first-launch until this submission notarizes; this artifact is for testing the pipeline, not public distribution.`);
+            try { fs.unlinkSync(zipPath); } catch { /* fine */ }
+            return;
         }
 
         let info;
